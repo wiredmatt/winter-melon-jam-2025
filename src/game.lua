@@ -1,9 +1,11 @@
-local Scenes = require "src.scenes"
-
 ---@type IGame
 local Game = {}
 
 Game.Load = function (self)
+    Settings.Load()
+    Settings.ApplyVideoSettings()
+    AudioManager.Init(Settings.current)
+
     AssetManager.Load()
     SceneManager.RegisterAll(Scenes)
     SceneManager.SwitchTo(Scenes.MainMenu)
@@ -32,6 +34,13 @@ end
 Game.MouseReleased = function (self, x, y, button, istouch, presses, rawx, rawy)
     if SceneManager.current and SceneManager.current.root_node then
         SceneManager.current.root_node:HandleMouseReleased(x, y, button)
+    end
+end
+
+Game.KeyPressed = function (self, key, scancode, isrepeat)
+    if key == "g" then
+        DEBUG_UI = not DEBUG_UI
+        print("[Debug] UI Debug Mode: " .. (DEBUG_UI and "ON" or "OFF"))
     end
 end
 

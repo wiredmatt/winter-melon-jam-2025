@@ -253,6 +253,9 @@ Button.Draw = function (self)
         child:Draw()
     end
 
+    -- Draw debug overlay
+    self:DrawDebugOverlay()
+
     love.graphics.pop()
 end
 

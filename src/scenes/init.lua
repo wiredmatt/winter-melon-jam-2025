@@ -1,5 +1,6 @@
 local Scenes = {
-    MainMenu = require("src.scenes.MainMenu")
+    MainMenu = require("src.scenes.MainMenuScene"),
+    Settings = require("src.scenes.SettingsScene")
 }
 
 return Scenes

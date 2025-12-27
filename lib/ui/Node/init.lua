@@ -17,6 +17,7 @@
 ---@field hovered boolean
 ---@field OnHover function?
 ---@field OnLeave function?
+---@field debug_color table
 local Node = {}
 Node.__index = Node
 
@@ -40,6 +41,13 @@ Node.New = function (config)
     self.OnHover = nil
     self.OnLeave = nil
 
+    self.debug_color = {
+        math.random(),
+        math.random(),
+        math.random(),
+        1
+    }
+
     return self
 end
 
@@ -50,7 +58,7 @@ Node.AddChild = function (self, child)
         child.parent:RemoveChild(child)
     end
 
-    -- Add to this node
+    -- then add to this node
     table.insert(self.children, child)
     child.parent = self
 end
@@ -92,6 +100,21 @@ Node.GetWorldTransform = function (self)
     return wx, wy, wr, wsx, wsy
 end
 
+-- NOTE(matt): call this at the end of every draw override, but before pop()
+Node.DrawDebugOverlay = function (self)
+    if _G.DEBUG_UI and (self.width > 0 or self.height > 0) then
+        local pr, pg, pb, pa = love.graphics.getColor()
+        local prev_line_width = love.graphics.getLineWidth()
+
+        love.graphics.setColor(self.debug_color)
+        love.graphics.setLineWidth(1)
+        love.graphics.rectangle("line", 0, 0, self.width, self.height)
+
+        love.graphics.setColor(pr, pg, pb, pa)
+        love.graphics.setLineWidth(prev_line_width)
+    end
+end
+
 Node.Draw = function (self)
     love.graphics.push()
     love.graphics.translate(self.x, self.y)
@@ -105,6 +128,9 @@ Node.Draw = function (self)
     for _, child in ipairs(self.children) do
         child:Draw()
     end
+
+    -- Draw debug outline
+    self:DrawDebugOverlay()
 
     love.graphics.pop()
 end

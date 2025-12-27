@@ -12,13 +12,12 @@ local Node = require("lib.ui.Node")
 local Sprite = setmetatable({}, { __index = Node })
 Sprite.__index = Sprite
 
----Create a new Sprite
 ---@param config SpriteConfig?
 ---@return Sprite
 Sprite.New = function (config)
     config = config or {}
 
-    -- Auto-calculate width/height from image if not provided
+    -- calculate width/height from image if not provided
     if not config.width or not config.height then
         local img_w, img_h = 0, 0
 
@@ -38,7 +37,6 @@ Sprite.New = function (config)
         end
     end
 
-    -- Call parent constructor to get base node
     local base_node = Node.New(config)
 
     local self = setmetatable(base_node, Sprite) --[[@as Sprite]]
@@ -56,7 +54,6 @@ Sprite.SetImage = function (self, image, quad)
     self.image = image
     self.quad = quad
 
-    -- Recalculate size
     if self.quad and self.image then
         local _, _, qw, qh = self.quad:getViewport()
         self.width, self.height = qw, qh
@@ -74,10 +71,8 @@ Sprite.Draw = function (self)
     love.graphics.rotate(self.r)
     love.graphics.scale(self.sx, self.sy)
 
-    -- Save previous color
     local pr, pg, pb, pa = love.graphics.getColor()
 
-    -- Draw image with color tint
     if self.image then
         love.graphics.setColor(self.color)
         if self.quad then
@@ -87,13 +82,13 @@ Sprite.Draw = function (self)
         end
     end
 
-    -- Restore previous color
     love.graphics.setColor(pr, pg, pb, pa)
 
-    -- Draw children
     for _, child in ipairs(self.children) do
         child:Draw()
     end
+
+    self:DrawDebugOverlay()
 
     love.graphics.pop()
 end

@@ -5,6 +5,7 @@
 ---@field MouseMoved fun(self, x: number, y: number, dx: number, dy: number, istouch: number, rawx: number, rawy: number, rawdx: number, rawdy: number) | nil
 ---@field MousePressed fun(self, x: number, y: number, button: number, istouch: number, presses: number, rawx: number, rawy: number) | nil
 ---@field MouseReleased fun(self, x: number, y: number, button: number, istouch: number, presses: number, rawx: number, rawy: number) | nil
+---@field KeyPressed fun(self, key: string, scancode: string, isrepeat: boolean) | nil
 ---@field TouchMoved fun(self, id: number, x: number, y: number, dx: number, dy: number, pressure: number, rawx: number, rawy: number, rawdx: number, rawdy: number) | nil
 ---@field TouchPressed fun(self, id: number, x: number, y: number, dx: number, dy: number, pressure: number, rawx: number, rawy: number, rawdx: number, rawdy: number) | nil
 ---@field TouchReleased fun(self, id: number, x: number, y: number, dx: number, dy: number, pressure: number, rawx: number, rawy: number, rawdx: number, rawdy: number) | nil
@@ -104,6 +105,7 @@ Program.Setup = function (config, game)
         if type(Program.game.MouseMoved) ~= "function" then Program.game.MouseMoved = __NOOP__ end
         if type(Program.game.MousePressed) ~= "function" then Program.game.MousePressed = __NOOP__ end
         if type(Program.game.MouseReleased) ~= "function" then Program.game.MouseReleased = __NOOP__ end
+        if type(Program.game.KeyPressed) ~= "function" then Program.game.KeyPressed = __NOOP__ end
 
         love.resize = function (ww, wh) Program.Resize(ww,wh,nil,nil) end
         love.draw = Program.Draw
@@ -111,6 +113,7 @@ Program.Setup = function (config, game)
         love.mousemoved = Program.MouseMoved
         love.mousepressed = Program.MousePressed
         love.mousereleased = Program.MouseReleased
+        love.keypressed = Program.KeyPressed
         love.touchmoved = Program.TouchMoved
         love.touchpressed = Program.TouchPressed
         love.touchreleased = Program.TouchReleased
@@ -124,31 +127,34 @@ Program.Setup = function (config, game)
         love.window.setMode = function (...) og_setMode(...);love.resize(...) end
     end
 
-    love.window.setMode(config.window_cfg.width, config.window_cfg.height, {
-        fullscreen = config.window_cfg.fullscreen,
-        fullscreentype = config.window_cfg.fullscreentype,
-        vsync = config.window_cfg.vsync,
-        msaa = config.window_cfg.msaa,
-        stencil = config.window_cfg.stencil,
-        depth = config.window_cfg.depth,
-        resizable = config.window_cfg.resizable,
-        borderless = config.window_cfg.borderless,
-        centered = config.window_cfg.centered,
-        display = config.window_cfg.display,
-        minwidth = config.window_cfg.minwidth,
-        minheight = config.window_cfg.minheight,
-        highdpi = config.window_cfg.highdpi,
-        x = config.window_cfg.x,
-        y = config.window_cfg.y,
-        usedpiscale = config.window_cfg.usedpiscale,
-        srgb = config.window_cfg.srgb
-    })
-
-    if config.window_cfg.title ~= nil then
-        love.window.setTitle(config.window_cfg.title)
-    end
+    Program.ApplyWindowSettings()
 
     Program.game:Load()
+end
+
+Program.ApplyWindowSettings = function ()
+    love.window.setMode(Program.window_cfg.width, Program.window_cfg.height, {
+        fullscreen = Program.window_cfg.fullscreen,
+        fullscreentype = Program.window_cfg.fullscreentype,
+        vsync = Program.window_cfg.vsync,
+        msaa = Program.window_cfg.msaa,
+        stencil = Program.window_cfg.stencil,
+        depth = Program.window_cfg.depth,
+        resizable = Program.window_cfg.resizable,
+        borderless = Program.window_cfg.borderless,
+        centered = Program.window_cfg.centered,
+        display = Program.window_cfg.display,
+        minwidth = Program.window_cfg.minwidth,
+        minheight = Program.window_cfg.minheight,
+        highdpi = Program.window_cfg.highdpi,
+        x = Program.window_cfg.x,
+        y = Program.window_cfg.y,
+        usedpiscale = Program.window_cfg.usedpiscale,
+        srgb = Program.window_cfg.srgb
+    })
+    if Program.window_cfg.title ~= nil then
+        love.window.setTitle(Program.window_cfg.title)
+    end
 end
 
 ---Resolution.resize will either be called by the user when they manually resize the window, 
@@ -258,6 +264,10 @@ end
 Program.MouseReleased = function (rawx,rawy,button,istouch,presses)
     local spx,spy = Program.ScaledPoint(rawx, rawy)
     Program.game:MouseReleased(spx,spy,button,istouch,presses,rawx,rawy)
+end
+
+Program.KeyPressed = function (key, scancode, isrepeat)
+    Program.game:KeyPressed(key, scancode, isrepeat)
 end
 
 Program.Touch.GetPosition = function (id)

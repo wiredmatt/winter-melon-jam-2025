@@ -11,11 +11,17 @@ local MainMenuScene = {
         h = ProgramCfg.virtual_cfg.height
     }),
     transition_out = SceneManager.Transitions.FadeOut.New(),
-    root_node = Node.New()
 }
 
 MainMenuScene.Enter = function ()
+    MainMenuScene.BuildGUI()
+end
+
+MainMenuScene.BuildGUI = function ()
     local tiny5_16px_font = AssetManager.assets.fonts.Tiny5_ttf[16]
+    tiny5_16px_font:setFilter("nearest", "nearest")
+
+    MainMenuScene.root_node = Node.New()
 
     local title = Label.New({
         x = 60,
@@ -33,11 +39,11 @@ MainMenuScene.Enter = function ()
         y = 60,
         width = 100,
         height = 30,
-        text = "Start Game",
+        text = "Play",
         font = tiny5_16px_font
     })
     start_button.OnClick = function()
-        -- todo
+        SceneManager.SwitchTo(Scenes.Gameplay) -- todo: "Intro" first for release
     end
 
     MainMenuScene.root_node:AddChild(start_button)
@@ -47,11 +53,11 @@ MainMenuScene.Enter = function ()
         y = 100,
         width = 100,
         height = 30,
-        text = "Options",
+        text = "Settings",
         font = tiny5_16px_font
     })
     options_button.OnClick = function()
-        -- todo
+        SceneManager.SwitchTo(Scenes.Settings)
     end
     MainMenuScene.root_node:AddChild(options_button)
 
@@ -70,22 +76,13 @@ MainMenuScene.Enter = function ()
 end
 
 MainMenuScene.Update = function (dt)
-    if MainMenuScene.root_node then
-        MainMenuScene.root_node:Update(dt)
-    end
+    MainMenuScene.root_node:Update(dt)
 end
 
 MainMenuScene.Draw = function ()
-    if MainMenuScene.root_node then
-        MainMenuScene.root_node:Draw()
-    end
+    MainMenuScene.root_node:Draw()
 end
 
-MainMenuScene.Exit = function ()
-    if MainMenuScene.root_node then
-        MainMenuScene.root_node:Destroy()
-        MainMenuScene.root_node = nil
-    end
-end
+MainMenuScene.Exit = function () end
 
 return MainMenuScene

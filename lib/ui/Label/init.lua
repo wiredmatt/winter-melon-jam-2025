@@ -28,7 +28,7 @@ Label.New = function (config)
     self.color = config.color or {1, 1, 1, 1} 
     self.align = config.align or "left"
 
-    -- Auto-calculate width/height if not provided
+    -- calculate width/height if not provided
     if not config.width then
         self.width = self.font:getWidth(self.text)
     end
@@ -51,25 +51,18 @@ Label.Draw = function (self)
     love.graphics.rotate(self.r)
     love.graphics.scale(self.sx, self.sy)
 
-    -- Save previous graphics state
     local prev_font = love.graphics.getFont()
     local pr, pg, pb, pa = love.graphics.getColor()
 
-    -- Set label style
     love.graphics.setFont(self.font)
     love.graphics.setColor(self.color)
 
-    -- Draw text with alignment
     love.graphics.printf(self.text, 0, 0, self.width, self.align)
 
-    -- Restore previous state
     love.graphics.setFont(prev_font)
     love.graphics.setColor(pr, pg, pb, pa)
 
-    -- Draw children
-    for _, child in ipairs(self.children) do
-        child:Draw()
-    end
+    self:DrawDebugOverlay()
 
     love.graphics.pop()
 end
