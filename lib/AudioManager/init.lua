@@ -7,31 +7,19 @@
 ---@field master_volume number
 ---@field music_volume number
 ---@field sfx_volume number
----@field master_muted boolean
----@field music_muted boolean
----@field sfx_muted boolean
 local AudioManager = {
     sources = {},
     master_volume = 1.0,
     music_volume = 1.0,
     sfx_volume = 1.0,
-    master_muted = false,
-    music_muted = false,
-    sfx_muted = false
 }
 
----@param settings table? Optional settings table with audio config
+---@param settings { master_volume: number, music_volume: number, sfx_volume: number } | nil
 AudioManager.Init = function (settings)
-    if settings and settings.audio then
-        AudioManager.master_volume = settings.audio.master_volume or 1.0
-        AudioManager.music_volume = settings.audio.music_volume or 1.0
-        AudioManager.sfx_volume = settings.audio.sfx_volume or 1.0
-        AudioManager.master_muted = settings.audio.master_muted or false
-        AudioManager.music_muted = settings.audio.music_muted or false
-        AudioManager.sfx_muted = settings.audio.sfx_muted or false
-        print("[AudioManager] Initialized with saved settings")
-    else
-        print("[AudioManager] Initialized with default settings")
+    if type(settings) == "table" then
+        AudioManager.master_volume = settings.master_volume or 1.0
+        AudioManager.music_volume = settings.music_volume or 1.0
+        AudioManager.sfx_volume = settings.sfx_volume or 1.0
     end
 end
 
@@ -84,14 +72,8 @@ AudioManager.UpdateSourceVolume = function (source)
 
     if info.tag == "music" then
         volume = volume * AudioManager.music_volume
-        if AudioManager.music_muted or AudioManager.master_muted then
-            volume = 0
-        end
     elseif info.tag == "sfx" then
         volume = volume * AudioManager.sfx_volume
-        if AudioManager.sfx_muted or AudioManager.master_muted then
-            volume = 0
-        end
     end
 
     source:setVolume(volume)
@@ -135,27 +117,6 @@ end
 ---@param volume number
 AudioManager.SetSFXVolume = function (volume)
     AudioManager.sfx_volume = math.max(0, math.min(1, volume))
-    AudioManager.UpdateAllVolumes()
-end
-
----Set master mute state
----@param muted boolean
-AudioManager.SetMasterMuted = function (muted)
-    AudioManager.master_muted = muted
-    AudioManager.UpdateAllVolumes()
-end
-
----Set music mute state
----@param muted boolean
-AudioManager.SetMusicMuted = function (muted)
-    AudioManager.music_muted = muted
-    AudioManager.UpdateAllVolumes()
-end
-
----Set SFX mute state
----@param muted boolean
-AudioManager.SetSFXMuted = function (muted)
-    AudioManager.sfx_muted = muted
     AudioManager.UpdateAllVolumes()
 end
 

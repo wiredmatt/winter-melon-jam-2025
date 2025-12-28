@@ -70,28 +70,25 @@ TabContainer.AddTab = function (self, label, content)
 
     self:RebuildTabButtons()
 
-    -- If this is the first tab, set it as active
+    -- if this is the first tab, set it as active
     if #self.tabs == 1 then
         self:SetActiveTab(1)
     end
 end
 
 TabContainer.RebuildTabButtons = function (self)
-    -- Clear existing tab buttons
+    -- clear existing tab buttons
     for _, button in ipairs(self.tab_buttons) do
         button:Destroy()
     end
     self.tab_buttons = {}
 
-    -- Temporarily remove content_container from children to re-add it after buttons
-    -- This ensures tab buttons are iterated first in HandleMouseMoved, preventing
-    -- content_container from consuming events before tabs can update their hover state
     self:RemoveChild(self.content_container)
 
-    -- Calculate tab button width
+    -- calculate tab button width
     local tab_width = math.floor((self.width - (self.tab_padding * (#self.tabs + 1))) / #self.tabs)
 
-    -- Create tab buttons
+    -- tab buttons
     for tab_idx, tab in ipairs(self.tabs) do
         local button = Button.New({
             x = math.floor(self.tab_padding + (tab_idx - 1) * (tab_width + self.tab_padding)),
@@ -104,7 +101,8 @@ TabContainer.RebuildTabButtons = function (self)
             hover_color = tab_idx == self.active_tab_index and self.active_tab_color or {0.4, 0.4, 0.4, 1},
             pressed_color = {0.2, 0.2, 0.2, 1},
             text_color = self.tab_text_color,
-            border_width = 0
+            border_width = 0,
+            focusable = false
         })
 
         button.OnClick = function() self:SetActiveTab(tab_idx) end
@@ -113,8 +111,6 @@ TabContainer.RebuildTabButtons = function (self)
         table.insert(self.tab_buttons, button)
     end
 
-    -- re add content_container AFTER tab buttons
-    -- ensures tab buttons are processed first during event handling
     self:AddChild(self.content_container)
 end
 

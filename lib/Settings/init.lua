@@ -12,13 +12,14 @@ local AudioManager = require("lib.AudioManager")
 ---@field master_volume number
 ---@field music_volume number
 ---@field sfx_volume number
----@field master_muted boolean
----@field music_muted boolean
----@field sfx_muted boolean
+
+---@class FlagsSettings
+---@field intro_seen boolean
 
 ---@class SettingsData
 ---@field video VideoSettings
 ---@field audio AudioSettings
+---@field flags FlagsSettings
 
 ---@class Settings
 ---@field current SettingsData
@@ -39,9 +40,9 @@ Settings.GetDefaults = function ()
             master_volume = 1.0,
             music_volume = 1.0,
             sfx_volume = 1.0,
-            master_muted = false,
-            music_muted = false,
-            sfx_muted = false
+        },
+        flags = {
+            intro_seen = false
         }
     }
 end
@@ -88,6 +89,7 @@ Settings.MergeDefaults = function (loaded)
 
     loaded.video = loaded.video or {}
     loaded.audio = loaded.audio or {}
+    loaded.flags = loaded.flags or {}
 
     for k, v in pairs(defaults.video) do
         if loaded.video[k] == nil then
@@ -101,21 +103,24 @@ Settings.MergeDefaults = function (loaded)
         end
     end
 
+    for k, v in pairs(defaults.flags) do
+        if loaded.flags[k] == nil then
+            loaded.flags[k] = v
+        end
+    end
+
     return loaded
 end
 
 Settings.Save = function ()
     if not Settings.current then
-        print("[Settings] No settings to save")
         return
     end
 
     local code = "return " .. Settings.SerializeTable(Settings.current)
     local success, message = love.filesystem.write("settings.lua", code)
 
-    if success then
-        print("[Settings] Saved to " .. love.filesystem.getSaveDirectory() .. "/settings.lua")
-    else
+    if not success then
         print("[Settings] Failed to save: " .. tostring(message))
     end
 end
@@ -130,7 +135,7 @@ Settings.Load = function ()
                 Settings.current = Settings.MergeDefaults(loaded)
                 print("[Settings] Loaded from file")
             else
-                print("[Settings] Failed to execute settings file: " .. tostring(loaded))
+                print("[Settings] Failed to interpret settings file: " .. tostring(loaded))
                 Settings.current = Settings.GetDefaults()
             end
         else
@@ -143,7 +148,7 @@ Settings.Load = function ()
     end
 end
 
----@param category string "video" or "audio"
+---@param category "video" | "audio" | "flags"
 ---@param key string Setting key
 ---@return any
 Settings.Get = function (category, key)
@@ -158,7 +163,7 @@ Settings.Get = function (category, key)
     return nil
 end
 
----@param category "video" | "audio"
+---@param category "video" | "audio" | "flags"
 ---@param key string Setting key
 ---@param value any Setting value
 Settings.Set = function (category, key, value)
@@ -197,15 +202,20 @@ Settings.ApplyAudioSettings = function ()
     AudioManager.SetMasterVolume(cfg.master_volume)
     AudioManager.SetMusicVolume(cfg.music_volume)
     AudioManager.SetSFXVolume(cfg.sfx_volume)
-    AudioManager.SetMasterMuted(cfg.master_muted)
-    AudioManager.SetMusicMuted(cfg.music_muted)
-    AudioManager.SetSFXMuted(cfg.sfx_muted)
 end
 
 Settings.Reset = function ()
-    Settings.current = Settings.GetDefaults()
+    local defaults = Settings.GetDefaults()
+
+    Settings.current.audio = defaults.audio
+    Settings.current.video = defaults.video
+
     Settings.Save()
-    print("[Settings] Reset to defaults")
+end
+
+Settings.ResetFlags = function ()
+    local defaults = Settings.GetDefaults()
+    Settings.current.flags = defaults.flags
 end
 
 return Settings

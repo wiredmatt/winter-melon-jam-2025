@@ -73,7 +73,7 @@ Program._og_touch_fns = {
     GetPosition = love.touch.GetPosition,
 }
 
-function __NOOP__(...) return nil end
+_G.__NOOP__ = _G.__NOOP__ or function (...) return nil end
 
 ---@param config IProgramConfig
 ---@param game IGame?
@@ -204,7 +204,12 @@ Program.Draw = function ()
     love.graphics.pop()
 end
 
-Program.Update = function (dt) Program.game:Update(dt) end
+Program.Update = function (dt)
+    Program.game:Update(dt)
+    if _G.InputManager and _G.InputManager.Update then
+        _G.InputManager.Update()
+    end
+end
 
 ---@param gx number global x
 ---@param gy number global y

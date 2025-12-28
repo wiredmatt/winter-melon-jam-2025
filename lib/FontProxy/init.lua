@@ -7,9 +7,6 @@ FontProxy.__index = FontProxy
 ---@param fontpath string
 ---@return ProxiedFont
 FontProxy.New = function (fontpath)
-    local testfnt = love.graphics.newFont(fontpath, 1) -- ensure font file exists and can be loaded
-    testfnt:release()
-
     return setmetatable({}, {
         __index = function (t, k)
             local cached = rawget(t, k)

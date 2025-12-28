@@ -48,7 +48,7 @@ Sprite.New = function (config)
     return self
 end
 
----@param image love.Image
+---@param image love.Image?
 ---@param quad love.Quad?
 Sprite.SetImage = function (self, image, quad)
     self.image = image

@@ -1,9 +1,9 @@
 ---@class Scene
 ---@field name string
----@field Enter fun()
----@field Exit fun()
+---@field Enter fun(self)
+---@field Exit fun(self)
 ---@field Update fun(self, dt)
----@field Draw fun()
+---@field Draw fun(self)
 ---@field transition_in Transition|nil
 ---@field transition_out Transition|nil
 ---@field root_node Node?
@@ -32,7 +32,7 @@ local SceneManager = {
 }
 SceneManager.__index = SceneManager
 
-function __NOOP__(...) return nil end
+_G.__NOOP__ = _G.__NOOP__ or function (...) return nil end
 
 ---@param scene Scene
 SceneManager._validate = function(scene)
@@ -145,6 +145,7 @@ SceneManager.Draw = function()
 end
 
 SceneManager.Transitions = {
+    NONE = require("lib.SceneManager.transitions.None").New(),
     FadeIn = require("lib.SceneManager.transitions.FadeIn"),
     FadeOut = require("lib.SceneManager.transitions.FadeOut"),
     DiagonalOut = require("lib.SceneManager.transitions.DiagonalOut")

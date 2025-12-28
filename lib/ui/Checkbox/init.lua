@@ -29,7 +29,7 @@ Checkbox.__index = Checkbox
 Checkbox.New = function (config)
     config = config or {}
 
-    -- Calculate width from box + label if not provided
+    -- calculate width from box + label if not provided
     if not config.width then
         local box_size = config.box_size or 16
         local label_spacing = config.label_spacing or 8
@@ -38,7 +38,7 @@ Checkbox.New = function (config)
         config.width = box_size + (label_width > 0 and (label_spacing + label_width) or 0)
     end
 
-    -- Calculate height from box or font if not provided
+    -- calculate height from box or font if not provided
     if not config.height then
         local box_size = config.box_size or 16
         local font = config.font or love.graphics.getFont()
@@ -123,7 +123,17 @@ Checkbox.Draw = function (self)
     local box_y = (self.height - self.box_size) / 2
 
     -- box background
-    love.graphics.setColor(self.box_color)
+    local bg_color = self.box_color
+    if self.hovered or self.focused then
+        -- Brighten background when hovered or focused
+        bg_color = {
+            math.min(1, self.box_color[1] + 0.2),
+            math.min(1, self.box_color[2] + 0.2),
+            math.min(1, self.box_color[3] + 0.2),
+            self.box_color[4]
+        }
+    end
+    love.graphics.setColor(bg_color)
     love.graphics.rectangle("fill", 0, box_y, self.box_size, self.box_size)
 
     -- box border

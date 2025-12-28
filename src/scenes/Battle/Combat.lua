@@ -1,0 +1,162 @@
+local BattleConfig = require("src.scenes.Battle.config")
+
+---@class CombatConfig
+---@field player_max_hp number?
+---@field player_hp number?
+---@field player_attack_power number?
+---@field enemy_max_hp number
+---@field enemy_attack_power number
+---@field bark_lines string[]
+---@field on_player_damage function?
+---@field on_enemy_damage function?
+---@field on_enemy_defeat function?
+---@field on_player_defeat function?
+---@field on_enemy_bark function?
+
+---@class Combat
+---@field player_max_hp number
+---@field player_hp number
+---@field player_attack_power number
+---@field enemy_max_hp number
+---@field enemy_hp number
+---@field enemy_attack_power number
+---@field bark_lines string[]
+---@field current_turn "player" | "enemy"
+---@field bark_timer number
+---@field last_bark_index number
+---@field defeat_timer number
+---@field on_player_damage function
+---@field on_enemy_damage function
+---@field on_enemy_defeat function
+---@field on_player_defeat function
+---@field on_enemy_bark function
+local Combat = {}
+Combat.__index = Combat
+
+---@param config CombatConfig
+---@return Combat
+Combat.New = function(config)
+    local self = setmetatable({}, Combat)
+
+    self.player_max_hp = config.player_max_hp or BattleConfig.COMBAT.PLAYER_MAX_HP
+    self.player_hp = config.player_hp or self.player_max_hp
+    self.player_attack_power = config.player_attack_power or BattleConfig.COMBAT.PLAYER_ATTACK_POWER
+
+    self.enemy_max_hp = config.enemy_max_hp
+    self.enemy_hp = config.enemy_max_hp
+    self.enemy_attack_power = config.enemy_attack_power
+
+    self.bark_lines = config.bark_lines or {}
+    self.current_turn = "player"
+    self.bark_timer = 0
+    self.last_bark_index = 0
+    self.defeat_timer = 0
+
+    self.on_player_damage = config.on_player_damage or function() end
+    self.on_enemy_damage = config.on_enemy_damage or function() end
+    self.on_enemy_defeat = config.on_enemy_defeat or function() end
+    self.on_player_defeat = config.on_player_defeat or function() end
+    self.on_enemy_bark = config.on_enemy_bark or function() end
+
+    return self
+end
+
+---@return table {damage: number, enemy_defeated: boolean}
+Combat.PlayerAttack = function(self)
+    if self.current_turn ~= "player" then
+        return {damage = 0, enemy_defeated = false}
+    end
+
+    local damage = self.player_attack_power + math.random(-BattleConfig.COMBAT.PLAYER_DAMAGE_VARIANCE, BattleConfig.COMBAT.PLAYER_DAMAGE_VARIANCE)
+    self.enemy_hp = math.max(0, self.enemy_hp - damage)
+
+    self.on_enemy_damage(damage, self.enemy_hp)
+
+    if self.enemy_hp <= 0 then
+        self.on_enemy_defeat()
+        return {damage = damage, enemy_defeated = true}
+    end
+
+    self.current_turn = "enemy"
+    self.bark_timer = BattleConfig.TIMING.ENEMY_ATTACK_DELAY
+
+    return {damage = damage, enemy_defeated = false}
+end
+
+---@return table {damage: number, bark_text: string?, player_defeated: boolean}
+Combat.EnemyAttack = function(self)
+    local damage = self.enemy_attack_power + math.random(-BattleConfig.COMBAT.ENEMY_DAMAGE_VARIANCE, BattleConfig.COMBAT.ENEMY_DAMAGE_VARIANCE)
+    self.player_hp = math.max(0, self.player_hp - damage)
+
+    -- random bark line... 40% chance, but always shows the first one
+    local bark_text = nil
+    local should_bark = self.last_bark_index == 0 or math.random() < BattleConfig.COMBAT.BARK_CHANCE
+    if #self.bark_lines > 0 and should_bark then
+        self.last_bark_index = (self.last_bark_index % #self.bark_lines) + 1
+        bark_text = self.bark_lines[self.last_bark_index]
+        self.on_enemy_bark(bark_text)
+    end
+
+    self.on_player_damage(damage, self.player_hp)
+
+    if self.player_hp <= 0 then
+        self.defeat_timer = BattleConfig.TIMING.DEFEAT_DELAY
+        self.on_player_defeat()
+        return {damage = damage, bark_text = bark_text, player_defeated = true}
+    end
+
+    self.current_turn = "player"
+
+    return {damage = damage, bark_text = bark_text, player_defeated = false}
+end
+
+---@param dt number
+Combat.Update = function(self, dt)
+    if self.defeat_timer > 0 then
+        self.defeat_timer = self.defeat_timer - dt
+    end
+
+    if self.current_turn == "enemy" and self.player_hp > 0 and self.enemy_hp > 0 then
+        self.bark_timer = self.bark_timer - dt
+        if self.bark_timer <= 0 then
+            self:EnemyAttack()
+        end
+    end
+end
+
+---@return number current, number max
+Combat.GetPlayerHP = function(self)
+    return self.player_hp, self.player_max_hp
+end
+
+---@return number current, number max
+Combat.GetEnemyHP = function(self)
+    return self.enemy_hp, self.enemy_max_hp
+end
+
+---@return number
+Combat.GetPlayerMaxHP = function(self)
+    return self.player_max_hp
+end
+
+---@return number
+Combat.GetEnemyMaxHP = function(self)
+    return self.enemy_max_hp
+end
+
+---@return boolean
+Combat.IsPlayerTurn = function(self)
+    return self.current_turn == "player"
+end
+
+---@return boolean
+Combat.IsDefeated = function(self)
+    return self.defeat_timer > 0
+end
+
+---@return boolean
+Combat.ShouldTransitionToLose = function(self)
+    return self.defeat_timer <= 0 and self.defeat_timer > -1 and self.player_hp <= 0
+end
+
+return Combat

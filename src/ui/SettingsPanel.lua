@@ -1,11 +1,3 @@
-local Node = require("lib.ui.Node")
-local Label = require("lib.ui.Label")
-local Button = require("lib.ui.Button")
-local Checkbox = require("lib.ui.Checkbox")
-local Slider = require("lib.ui.Slider")
-local TabContainer = require("lib.ui.TabContainer")
-local Settings = require("lib.Settings")
-
 ---@class SettingsPanelConfig
 ---@field x number?
 ---@field y number?
@@ -13,17 +5,19 @@ local Settings = require("lib.Settings")
 ---@field show_title boolean?
 ---@field on_back function?
 
+---@class SettingsPanel : SettingsPanelConfig, Node
+---@field tab_container TabContainer
 local SettingsPanel = {}
 
 ---@param config SettingsPanelConfig
----@return Node panel_root
+---@return SettingsPanel panel_root
 SettingsPanel.New = function (config)
     config = config or {}
 
-    local root = Node.New({
+    local root = UI.Node.New({
         x = config.x or 0,
         y = config.y or 0
-    })
+    })  --[[@as SettingsPanel]]
 
     local font = config.font or love.graphics.getFont()
     local show_title = config.show_title ~= false
@@ -32,7 +26,7 @@ SettingsPanel.New = function (config)
     local controls = {}
 
     if show_title then
-        local title = Label.New({
+        local title = UI.Label.New({
             x = 60,
             y = 8,
             width = 200,
@@ -45,7 +39,7 @@ SettingsPanel.New = function (config)
         y_offset = 30
     end
 
-    local tab_container = TabContainer.New({
+    local tab_container = UI.TabContainer.New({
         x = 10,
         y = y_offset,
         width = 300,
@@ -55,15 +49,16 @@ SettingsPanel.New = function (config)
     })
     root:AddChild(tab_container)
 
-    local video_content = Node.New()
+    local video_content = UI.Node.New()
 
-    local fullscreen_checkbox = Checkbox.New({
+    local fullscreen_checkbox = UI.Checkbox.New({
         x = 40,
         y = 20,
         box_size = 12,
         label = "Fullscreen",
         font = font,
-        checked = Settings.Get("video", "fullscreen")
+        checked = Settings.Get("video", "fullscreen"),
+        focusable = true
     })
     fullscreen_checkbox.OnChanged = function(checked)
         Settings.Set("video", "fullscreen", checked)
@@ -72,13 +67,14 @@ SettingsPanel.New = function (config)
     video_content:AddChild(fullscreen_checkbox)
     controls.fullscreen = fullscreen_checkbox
 
-    local vsync_checkbox = Checkbox.New({
+    local vsync_checkbox = UI.Checkbox.New({
         x = 40,
         y = 48,
         box_size = 12,
         label = "VSync",
         font = font,
-        checked = Settings.Get("video", "vsync")
+        checked = Settings.Get("video", "vsync"),
+        focusable = true
     })
     vsync_checkbox.OnChanged = function(checked)
         Settings.Set("video", "vsync", checked)
@@ -87,17 +83,16 @@ SettingsPanel.New = function (config)
     video_content:AddChild(vsync_checkbox)
     controls.vsync = vsync_checkbox
 
-    local audio_content = Node.New()
+    local audio_content = UI.Node.New()
 
     local row_spacing = 24
     local label_x = 10
     local slider_x = 65
-    local slider_width = 110
-    local value_x = 180
-    local mute_x = 220
+    local slider_width = 150
+    local value_x = 224
 
     local master_y = 10
-    local master_label = Label.New({
+    local master_label = UI.Label.New({
         x = label_x,
         y = master_y,
         text = "Master:",
@@ -105,17 +100,18 @@ SettingsPanel.New = function (config)
     })
     audio_content:AddChild(master_label)
 
-    local master_slider = Slider.New({
+    local master_slider = UI.Slider.New({
         x = slider_x,
         y = master_y,
         width = slider_width,
         height = 12,
-        value = Settings.Get("audio", "master_volume")
+        value = Settings.Get("audio", "master_volume"),
+        focusable = true
     })
     audio_content:AddChild(master_slider)
     controls.master_slider = master_slider
 
-    local master_value_label = Label.New({
+    local master_value_label = UI.Label.New({
         x = value_x,
         y = master_y,
         width = 35,
@@ -131,23 +127,8 @@ SettingsPanel.New = function (config)
         master_value_label:SetText(tostring(math.floor(value * 100)) .. "%")
     end
 
-    local master_mute = Checkbox.New({
-        x = mute_x,
-        y = master_y,
-        box_size = 12,
-        label = "Mute",
-        font = font,
-        checked = Settings.Get("audio", "master_muted")
-    })
-    master_mute.OnChanged = function(checked)
-        Settings.Set("audio", "master_muted", checked)
-        Settings.ApplyAudioSettings()
-    end
-    audio_content:AddChild(master_mute)
-    controls.master_mute = master_mute
-
     local music_y = master_y + row_spacing
-    local music_label = Label.New({
+    local music_label = UI.Label.New({
         x = label_x,
         y = music_y,
         text = "Music:",
@@ -155,17 +136,18 @@ SettingsPanel.New = function (config)
     })
     audio_content:AddChild(music_label)
 
-    local music_slider = Slider.New({
+    local music_slider = UI.Slider.New({
         x = slider_x,
         y = music_y,
         width = slider_width,
         height = 12,
-        value = Settings.Get("audio", "music_volume")
+        value = Settings.Get("audio", "music_volume"),
+        focusable = true
     })
     audio_content:AddChild(music_slider)
     controls.music_slider = music_slider
 
-    local music_value_label = Label.New({
+    local music_value_label = UI.Label.New({
         x = value_x,
         y = music_y,
         width = 35,
@@ -181,23 +163,8 @@ SettingsPanel.New = function (config)
         music_value_label:SetText(tostring(math.floor(value * 100)) .. "%")
     end
 
-    local music_mute = Checkbox.New({
-        x = mute_x,
-        y = music_y,
-        box_size = 12,
-        label = "Mute",
-        font = font,
-        checked = Settings.Get("audio", "music_muted")
-    })
-    music_mute.OnChanged = function(checked)
-        Settings.Set("audio", "music_muted", checked)
-        Settings.ApplyAudioSettings()
-    end
-    audio_content:AddChild(music_mute)
-    controls.music_mute = music_mute
-
     local sfx_y = music_y + row_spacing
-    local sfx_label = Label.New({
+    local sfx_label = UI.Label.New({
         x = label_x,
         y = sfx_y,
         text = "SFX:",
@@ -205,17 +172,18 @@ SettingsPanel.New = function (config)
     })
     audio_content:AddChild(sfx_label)
 
-    local sfx_slider = Slider.New({
+    local sfx_slider = UI.Slider.New({
         x = slider_x,
         y = sfx_y,
         width = slider_width,
         height = 12,
-        value = Settings.Get("audio", "sfx_volume")
+        value = Settings.Get("audio", "sfx_volume"),
+        focusable = true
     })
     audio_content:AddChild(sfx_slider)
     controls.sfx_slider = sfx_slider
 
-    local sfx_value_label = Label.New({
+    local sfx_value_label = UI.Label.New({
         x = value_x,
         y = sfx_y,
         width = 35,
@@ -231,21 +199,6 @@ SettingsPanel.New = function (config)
         sfx_value_label:SetText(tostring(math.floor(value * 100)) .. "%")
     end
 
-    local sfx_mute = Checkbox.New({
-        x = mute_x,
-        y = sfx_y,
-        box_size = 12,
-        label = "Mute",
-        font = font,
-        checked = Settings.Get("audio", "sfx_muted")
-    })
-    sfx_mute.OnChanged = function(checked)
-        Settings.Set("audio", "sfx_muted", checked)
-        Settings.ApplyAudioSettings()
-    end
-    audio_content:AddChild(sfx_mute)
-    controls.sfx_mute = sfx_mute
-
     tab_container:AddTab("Video", video_content)
     tab_container:AddTab("Audio", audio_content)
 
@@ -260,33 +213,25 @@ SettingsPanel.New = function (config)
         controls.master_slider.value = master_vol
         controls.master_value_label:SetText(tostring(math.floor(master_vol * 100)) .. "%")
 
-        local is_master_muted = Settings.Get("audio", "master_muted")
-        controls.master_mute:SetChecked(is_master_muted)
-
         local music_vol = Settings.Get("audio", "music_volume")
         controls.music_slider:SetValue(music_vol)
         controls.music_value_label:SetText(tostring(math.floor(music_vol * 100)) .. "%")
 
-        local is_music_muted = Settings.Get("audio", "music_muted")
-        controls.music_mute:SetChecked(is_music_muted)
-
         local sfx_vol = Settings.Get("audio", "sfx_volume")
         controls.sfx_slider:SetValue(sfx_vol)
         controls.sfx_value_label:SetText(tostring(math.floor(sfx_vol * 100)) .. "%")
-
-        local is_sfx_muted = Settings.Get("audio", "sfx_muted")
-        controls.sfx_mute:SetChecked(is_sfx_muted)
     end
 
     local bottom_buttons_y = 145
 
-    local reset_button = Button.New({
+    local reset_button = UI.Button.New({
         x = 60,
         y = bottom_buttons_y,
         width = 80,
         height = 28,
         text = "Reset",
-        font = font
+        font = font,
+        focusable = true
     })
     reset_button.OnClick = function()
         Settings.Reset()
@@ -294,13 +239,14 @@ SettingsPanel.New = function (config)
     end
     root:AddChild(reset_button)
 
-    local back_button = Button.New({
+    local back_button = UI.Button.New({
         x = 180,
         y = bottom_buttons_y,
         width = 80,
         height = 28,
         text = "Back",
-        font = font
+        font = font,
+        focusable = true
     })
     back_button.OnClick = function()
         if config.on_back then
@@ -308,6 +254,9 @@ SettingsPanel.New = function (config)
         end
     end
     root:AddChild(back_button)
+
+    -- expose tab_container for external access (e.g., keyboard tab switching)
+    root.tab_container = tab_container
 
     return root
 end

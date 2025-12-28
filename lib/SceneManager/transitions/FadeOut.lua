@@ -6,6 +6,7 @@ FadeOutTransition.__index = FadeOutTransition
 ---@return fun(): Transition
 FadeOutTransition.New = function(config)
     config = config or {}
+
     return function ()
         local self = setmetatable({}, FadeOutTransition)
 

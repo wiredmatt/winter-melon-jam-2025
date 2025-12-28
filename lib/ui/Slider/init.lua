@@ -166,7 +166,7 @@ Slider.Draw = function (self)
     local handle_x = filled_width - (self.handle_width / 2)
     local handle_y = (self.height - self.handle_width) / 2
 
-    if self.hovered or self.dragging then
+    if self.hovered or self.dragging or self.focused then
         love.graphics.setColor(self.handle_hover_color)
     else
         love.graphics.setColor(self.handle_color)

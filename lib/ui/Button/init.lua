@@ -1,5 +1,4 @@
 local Node = require("lib.ui.Node")
-local NSlice = require("lib.NSlice")
 
 ---@class ButtonConfig : NodeConfig
 ---@field text string?
@@ -10,6 +9,8 @@ local NSlice = require("lib.NSlice")
 ---@field text_color table?
 ---@field border_width number?
 ---@field border_color table?
+---@field focused_border_color table?
+---@field focused_border_width number?
 ---@field icon love.Image?
 ---@field icon_quad love.Quad?
 ---@field icon_position string?
@@ -26,6 +27,8 @@ local NSlice = require("lib.NSlice")
 ---@field text_color table
 ---@field border_width number
 ---@field border_color table
+---@field focused_border_color table
+---@field focused_border_width number
 ---@field pressed boolean
 ---@field OnClick function?
 ---@field icon love.Image?
@@ -54,17 +57,17 @@ Button.New = function (config)
     self.text_color = config.text_color or {1, 1, 1, 1}
     self.border_width = config.border_width or 2
     self.border_color = config.border_color or {1, 1, 1, 1}
+    self.focused_border_color = config.focused_border_color or {0.3, 0.7, 1, 1}
+    self.focused_border_width = config.focused_border_width or 3
     self.pressed = false
     self.OnClick = nil
 
-    -- Icon properties
     self.icon = config.icon
     self.icon_quad = config.icon_quad
     self.icon_position = config.icon_position or "left"
     self.icon_spacing = config.icon_spacing or 4
     self.icon_color = config.icon_color or {1, 1, 1, 1}
 
-    -- NineSlice background
     self.nineslice = config.nineslice
 
     return self
@@ -137,7 +140,6 @@ end
 ---@param button number Mouse button (1 = left, 2 = right, 3 = middle)
 ---@return boolean consumed True if event was handled
 Button.HandleMousePressed = function (self, x, y, button)
-    -- Check children first
     for _, child in ipairs(self.children) do
         if child.HandleMousePressed then
             if child:HandleMousePressed(x, y, button) then
@@ -146,7 +148,6 @@ Button.HandleMousePressed = function (self, x, y, button)
         end
     end
 
-    -- Handle left click on this button
     if button == 1 and self:ContainsPoint(x, y) and self.enabled then
         self.pressed = true
         return true
@@ -160,7 +161,6 @@ end
 ---@param button number Mouse button (1 = left, 2 = right, 3 = middle)
 ---@return boolean consumed True if event was handled
 Button.HandleMouseReleased = function (self, x, y, button)
-    -- Check children first
     for _, child in ipairs(self.children) do
         if child.HandleMouseReleased then
             if child:HandleMouseReleased(x, y, button) then
@@ -169,7 +169,6 @@ Button.HandleMouseReleased = function (self, x, y, button)
         end
     end
 
-    -- Handle left click release
     if button == 1 and self.pressed then
         self.pressed = false
 
@@ -190,18 +189,16 @@ Button.Draw = function (self)
     love.graphics.rotate(self.r)
     love.graphics.scale(self.sx, self.sy)
 
-    -- Save previous graphics state
     local prev_line_width = love.graphics.getLineWidth()
     local pr, pg, pb, pa = love.graphics.getColor()
     local prev_font = love.graphics.getFont()
 
-    -- Determine background color based on state
     local bg_color = self.normal_color
     if not self.enabled then
         bg_color = {0.2, 0.2, 0.2, 0.5}
     elseif self.pressed then
         bg_color = self.pressed_color
-    elseif self.hovered then
+    elseif self.hovered or self.focused then
         bg_color = self.hover_color
     end
 
@@ -223,10 +220,9 @@ Button.Draw = function (self)
         end
     end
 
-    -- Calculate layout for icon and text
+    -- calculate layout for icon and text
     local icon_x, icon_y, text_x, text_y = self:CalculateLayout()
 
-    -- Draw icon
     if self.icon then
         love.graphics.setColor(self.icon_color)
         if self.icon_quad then
@@ -236,24 +232,20 @@ Button.Draw = function (self)
         end
     end
 
-    -- Draw text
     if self.text ~= "" then
         love.graphics.setFont(self.font)
         love.graphics.setColor(self.text_color)
         love.graphics.print(self.text, text_x, text_y)
     end
 
-    -- Restore previous state
     love.graphics.setLineWidth(prev_line_width)
     love.graphics.setColor(pr, pg, pb, pa)
     love.graphics.setFont(prev_font)
 
-    -- Draw children
     for _, child in ipairs(self.children) do
         child:Draw()
     end
 
-    -- Draw debug overlay
     self:DrawDebugOverlay()
 
     love.graphics.pop()

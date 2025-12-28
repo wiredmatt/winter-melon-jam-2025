@@ -7,6 +7,7 @@
 ---@field width number?
 ---@field height number?
 ---@field enabled boolean?
+---@field focusable boolean?
 
 ---@class Node : NodeConfig
 ---@field parent Node?
@@ -15,8 +16,12 @@
 ---@field height number
 ---@field enabled boolean
 ---@field hovered boolean
+---@field focusable boolean
+---@field focused boolean
 ---@field OnHover function?
 ---@field OnLeave function?
+---@field OnFocus function?
+---@field OnBlur function?
 ---@field debug_color table
 local Node = {}
 Node.__index = Node
@@ -36,10 +41,14 @@ Node.New = function (config)
     self.height = config.height or 0
     self.enabled = config.enabled ~= false
     self.hovered = false
+    self.focusable = config.focusable or false
+    self.focused = false
     self.parent = nil
     self.children = {}
     self.OnHover = nil
     self.OnLeave = nil
+    self.OnFocus = nil
+    self.OnBlur = nil
 
     self.debug_color = {
         math.random(),
@@ -270,6 +279,167 @@ Node.HandleMouseReleased = function (self, x, y, button)
                 return true  -- Child did consume event
             end
         end
+    end
+
+    return false
+end
+
+-- Focus Management
+
+---Get the world-space center position of this node
+---@return number cx, number cy
+Node.GetWorldCenter = function (self)
+    local wx, wy = self:GetWorldTransform()
+    return wx + self.width / 2, wy + self.height / 2
+end
+
+---Recursively get all focusable descendants
+---@return Node[]
+Node.GetFocusableDescendants = function (self)
+    local focusables = {}
+
+    if self.focusable and self.enabled then
+        table.insert(focusables, self)
+    end
+
+    for _, child in ipairs(self.children) do
+        if child.GetFocusableDescendants then
+            local child_focusables = child:GetFocusableDescendants()
+            for _, focusable in ipairs(child_focusables) do
+                table.insert(focusables, focusable)
+            end
+        end
+    end
+
+    return focusables
+end
+
+---Get the currently focused descendant
+---@return Node?
+Node.GetFocused = function (self)
+    if self.focused then
+        return self
+    end
+
+    for _, child in ipairs(self.children) do
+        if child.GetFocused then
+            local focused = child:GetFocused()
+            if focused then
+                return focused
+            end
+        end
+    end
+
+    return nil
+end
+
+---Clear focus from all descendants
+Node.ClearFocus = function (self)
+    if self.focused then
+        self.focused = false
+        if self.OnBlur then
+            self.OnBlur()
+        end
+    end
+
+    for _, child in ipairs(self.children) do
+        if child.ClearFocus then
+            child:ClearFocus()
+        end
+    end
+end
+
+---Set focus to a specific node
+---@param node Node?
+Node.SetFocused = function (self, node)
+    -- Clear existing focus
+    self:ClearFocus()
+
+    -- Set new focus
+    if node then
+        node.focused = true
+        if node.OnFocus then
+            node.OnFocus()
+        end
+    end
+end
+
+---Navigate focus in a direction using spatial algorithm
+---@param dx number Direction X (-1 for left, 1 for right, 0 for vertical only)
+---@param dy number Direction Y (-1 for up, 1 for down, 0 for horizontal only)
+---@return boolean success True if focus changed
+Node.FocusDirection = function (self, dx, dy)
+    local current = self:GetFocused()
+    local focusables = self:GetFocusableDescendants()
+
+    -- If nothing is focused, focus the first element
+    if not current then
+        if #focusables > 0 then
+            self:SetFocused(focusables[1])
+            return true
+        end
+        return false
+    end
+
+    -- Get current center
+    local cx, cy = current:GetWorldCenter()
+
+    -- Normalize direction vector
+    local dir_length = math.sqrt(dx * dx + dy * dy)
+    if dir_length == 0 then return false end
+    dx = dx / dir_length
+    dy = dy / dir_length
+
+    -- Find best candidate
+    local best_candidate = nil
+    local best_score = -math.huge
+    local best_distance = math.huge
+
+    for _, candidate in ipairs(focusables) do
+        if candidate ~= current then
+            local nx, ny = candidate:GetWorldCenter()
+
+            -- Vector from current to candidate
+            local delta_x = nx - cx
+            local delta_y = ny - cy
+
+            -- Dot product: how aligned with direction?
+            local alignment = delta_x * dx + delta_y * dy
+
+            -- Only consider candidates in front of us
+            if alignment > 0 then
+                local distance = math.sqrt(delta_x * delta_x + delta_y * delta_y)
+
+                -- Score: prioritize alignment, penalize distance
+                local score = alignment / distance
+
+                -- Pick best score, or if tied, pick closer element
+                if score > best_score or (math.abs(score - best_score) < 0.001 and distance < best_distance) then
+                    best_score = score
+                    best_distance = distance
+                    best_candidate = candidate
+                end
+            end
+        end
+    end
+
+    -- Set focus to best candidate
+    if best_candidate then
+        self:SetFocused(best_candidate)
+        return true
+    end
+
+    return false
+end
+
+---Activate the currently focused element (trigger its action)
+---@return boolean success True if an action was triggered
+Node.ActivateFocused = function (self)
+    local focused = self:GetFocused()
+
+    if focused and focused.OnClick then
+        focused.OnClick()
+        return true
     end
 
     return false
