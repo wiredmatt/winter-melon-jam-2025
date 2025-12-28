@@ -8,6 +8,7 @@
 ---@field sprite_quad love.Quad?
 ---@field death_animation string|table? Death animation preset or config
 ---@field attack_animation string|table? Attack animation preset or config
+---@field intro_animation string|table? Intro animation preset or config
 
 ---@class BattleDialogue
 ---@field text string
@@ -20,6 +21,7 @@
 ---@field bark_lines string[] short lines enemy says during combat
 ---@field closing_dialogue BattleDialogue[]
 ---@field player_attack_animation string|table? Player attack animation preset or config
+---@field player_intro_animation string|table? Player intro animation preset or config
 
 ---@type BattleConfig[]
 local BATTLES = {
@@ -37,8 +39,10 @@ local BATTLES = {
             sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = "spin_fall",
             attack_animation = "straight",
+            intro_animation = "slide_in_right",
         },
         player_attack_animation = "dash",
+        player_intro_animation = "slide_in",
         bark_lines = {
             "Is that all you've got?",
             "Pathetic...",
@@ -62,8 +66,10 @@ local BATTLES = {
             sprite_quad = love.graphics.newQuad(96, 0, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = "explode",
             attack_animation = "zigzag",  -- Shadowy, erratic movement
+            intro_animation = "drop_bounce",
         },
         player_attack_animation = "spin_tackle",
+        player_intro_animation = "spin_entry",
         bark_lines = {
             "You're stronger than you look.",
             "But not strong enough!",
@@ -88,8 +94,10 @@ local BATTLES = {
             sprite_quad = love.graphics.newQuad(64, 128, 32, 32, AssetManager.assets.sprites.monsters_png),
             death_animation = "slide",
             attack_animation = "dash",
+            intro_animation = "diagonal_spin",
         },
         player_attack_animation = "zigzag",
+        player_intro_animation = "pop_in",
         bark_lines = {
             "The weight of power crushes the weak!",
             "Do you feel it yet?",
@@ -114,8 +122,10 @@ local BATTLES = {
             sprite_quad = love.graphics.newQuad(128, 32, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = "fade",
             attack_animation = "arc_tackle",  -- Graceful, controlled arc
+            intro_animation = "spin_entry",
         },
         player_attack_animation = "arc_tackle",
+        player_intro_animation = "drop_bounce",
         bark_lines = {
             "The masks test your worth!",
             "Are you truly worthy?",
@@ -147,11 +157,23 @@ local BATTLES = {
                 }
             },
             attack_animation = "spin_tackle",  -- Aggressive spinning attack
+            intro_animation = {  -- Dramatic boss entrance
+                preset = "pop_in",
+                overrides = {
+                    duration = 1.2,  -- Slower, more menacing
+                }
+            },
         },
         player_attack_animation = {  -- Epic final battle player attack
             preset = "dash",
             overrides = {
                 duration = 0.5,  -- Slightly longer for dramatic effect
+            }
+        },
+        player_intro_animation = {  -- Determined entrance for final battle
+            preset = "slide_in",
+            overrides = {
+                duration = 0.8,  -- Slightly slower, more serious
             }
         },
         bark_lines = {

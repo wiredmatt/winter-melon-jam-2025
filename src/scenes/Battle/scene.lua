@@ -5,6 +5,7 @@ local DialogueUI = require("src.scenes.Battle.DialogueUI")
 local BattleUI = require("src.scenes.Battle.BattleUI")
 local DeathAnimation = require("src.scenes.Battle.DeathAnimation")
 local AttackAnimation = require("src.scenes.Battle.AttackAnimation")
+local IntroAnimation = require("src.scenes.Battle.IntroAnimation")
 local FloatingText = require("src.scenes.Battle.FloatingText")
 local ScreenShake = require("src.scenes.Battle.ScreenShake")
 
@@ -19,6 +20,8 @@ local ScreenShake = require("src.scenes.Battle.ScreenShake")
 ---@field death_anim DeathAnimation
 ---@field player_attack_anim AttackAnimation
 ---@field enemy_attack_anim AttackAnimation
+---@field player_intro_anim IntroAnimation
+---@field enemy_intro_anim IntroAnimation
 ---@field floating_text FloatingText
 ---@field screen_shake ScreenShake
 ---@field pending_enemy_attack boolean
@@ -76,6 +79,8 @@ BattleScene.Enter = function (self)
     self.death_anim = DeathAnimation.New()
     self.player_attack_anim = AttackAnimation.New()
     self.enemy_attack_anim = AttackAnimation.New()
+    self.player_intro_anim = IntroAnimation.New()
+    self.enemy_intro_anim = IntroAnimation.New()
     self.pending_enemy_attack = false
     self.transitioning = false
 
@@ -172,6 +177,19 @@ BattleScene.SetupBattleUI = function (self)
         enemy_hp = enemy_hp,
         enemy_max_hp = enemy_max_hp,
     })
+
+    -- Start intro animations
+    local player_sprite_data = self.battle_ui:GetPlayerSpriteData()
+    local player_x, player_y = self.battle_ui:GetPlayerSpritePosition()
+    local player_intro_config = self.battle_config.player_intro_animation or "slide_in"
+    self.player_intro_anim:Start(player_sprite_data, player_x, player_y, player_intro_config)
+    self.battle_ui:HidePlayerSprite()
+
+    local enemy_sprite_data = self.battle_ui:GetEnemySpriteData()
+    local enemy_x, enemy_y = self.battle_ui:GetEnemySpritePosition()
+    local enemy_intro_config = self.battle_config.enemy.intro_animation or "slide_in_right"
+    self.enemy_intro_anim:Start(enemy_sprite_data, enemy_x, enemy_y, enemy_intro_config)
+    self.battle_ui:HideEnemySprite()
 end
 
 BattleScene.TriggerPlayerAttack = function (self)
@@ -204,8 +222,9 @@ BattleScene.HandleInput = function (self)
         end
     -- handle battle state
     elseif self.state == STATE.BATTLE then
-        -- block input during defeat countdown, death animation, or attack animations
-        if self.combat:IsDefeated() or self.death_anim:IsActive() or
+        -- block input during intro animations, defeat countdown, death animation, or attack animations
+        if self.player_intro_anim:IsActive() or self.enemy_intro_anim:IsActive() or
+           self.combat:IsDefeated() or self.death_anim:IsActive() or
            self.player_attack_anim:IsActive() or self.enemy_attack_anim:IsActive() then
             return
         end
@@ -226,6 +245,23 @@ BattleScene.Update = function (self, dt)
     end
 
     if self.state == STATE.BATTLE then
+        -- Update intro animations
+        if self.player_intro_anim:IsActive() then
+            self.player_intro_anim:Update(dt)
+            if not self.player_intro_anim:IsActive() then
+                -- Player intro animation complete
+                self.battle_ui:ShowPlayerSprite()
+            end
+        end
+
+        if self.enemy_intro_anim:IsActive() then
+            self.enemy_intro_anim:Update(dt)
+            if not self.enemy_intro_anim:IsActive() then
+                -- Enemy intro animation complete
+                self.battle_ui:ShowEnemySprite()
+            end
+        end
+
         -- Update attack animations
         if self.player_attack_anim:IsActive() then
             self.player_attack_anim:Update(dt)
@@ -252,7 +288,8 @@ BattleScene.Update = function (self, dt)
         end
 
         -- Update combat timing, but intercept enemy attacks
-        if not self.player_attack_anim:IsActive() and not self.enemy_attack_anim:IsActive() then
+        if not self.player_intro_anim:IsActive() and not self.enemy_intro_anim:IsActive() and
+           not self.player_attack_anim:IsActive() and not self.enemy_attack_anim:IsActive() then
             -- Only update combat when no animations are playing
             if self.combat.current_turn == "enemy" and self.combat.player_hp > 0 and self.combat.enemy_hp > 0 then
                 self.combat.bark_timer = self.combat.bark_timer - dt
@@ -299,6 +336,9 @@ BattleScene.Draw = function (self)
         self.dialogue_ui:Draw()
     elseif self.state == STATE.BATTLE then
         self.battle_ui:Draw()
+
+        self.player_intro_anim:Draw()
+        self.enemy_intro_anim:Draw()
 
         self.player_attack_anim:Draw()
         self.enemy_attack_anim:Draw()
