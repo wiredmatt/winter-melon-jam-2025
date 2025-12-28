@@ -8,7 +8,9 @@
 ---@field typewriter_blip2_wav love.Source
 
 ---@class GameAssets_sprites
+---@field LICENSE_txt string
 ---@field animals_png love.Image
+---@field monsters_png love.Image
 ---@field rogues_png love.Image
 
 ---@class GameAssets

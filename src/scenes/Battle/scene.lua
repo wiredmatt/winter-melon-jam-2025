@@ -75,6 +75,7 @@ BattleScene.Enter = function (self)
     self.player_attack_anim = AttackAnimation.New()
     self.enemy_attack_anim = AttackAnimation.New()
     self.pending_enemy_attack = false
+    self.transitioning = false
 
     -- setup combat with callbacks
     self.combat = Combat.New({
@@ -122,6 +123,11 @@ BattleScene.Enter = function (self)
 end
 
 BattleScene.AdvanceDialogue = function (self)
+    -- Prevent advancing dialogue multiple times during scene transition
+    if self.transitioning then
+        return
+    end
+
     local dialogues = self.state == STATE.OPENING_DIALOGUE
         and self.battle_config.opening_dialogue
         or self.battle_config.closing_dialogue
@@ -135,6 +141,7 @@ BattleScene.AdvanceDialogue = function (self)
             self:SetupBattleUI()
         elseif self.state == STATE.CLOSING_DIALOGUE then
             -- battle complete, move to next battle or end
+            self.transitioning = true  -- Prevent multiple calls
             if BattleManager.HasNextBattle() then
                 BattleManager.NextBattle()
                 SceneManager.SwitchTo(Scenes.Battle)
@@ -235,6 +242,11 @@ BattleScene.Update = function (self, dt)
                 self.combat:EnemyAttack()
                 self.pending_enemy_attack = false
             end
+        end
+
+        -- Update defeat timer
+        if self.combat.defeat_timer > 0 then
+            self.combat.defeat_timer = self.combat.defeat_timer - dt
         end
 
         -- Update combat timing, but intercept enemy attacks

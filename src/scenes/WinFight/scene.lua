@@ -3,9 +3,14 @@ local BattleManager = require("src.scenes.Battle.BattleManager")
 ---@class WinFightScene : Scene
 local WinFightScene = {
     name = "WinFight",
+    inputmap = require("src.scenes.WinFight.inputmap"),
 }
 
 WinFightScene.Enter = function (self)
+    InputManager.DefineMap(self.name)
+    InputManager.LoadBindings(self.name, self.inputmap.bindings)
+    InputManager.SetActiveMap(self.name)
+
     local tiny5_16px_font = AssetManager.assets.fonts.Tiny5_ttf[16]
     tiny5_16px_font:setFilter("nearest", "nearest")
 
@@ -45,7 +50,16 @@ WinFightScene.Draw = function (self)
     self.root_node:Draw()
 end
 
+WinFightScene.HandleInput = function (self)
+    if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
+        BattleManager.Reset()
+        SceneManager.SwitchTo(Scenes.MainMenu)
+    end
+end
+
 WinFightScene.Update = function (self, dt)
+    self:HandleInput()
+
     if self.continue_prompt then
         local alpha = 0.5 + 0.5 * math.sin(love.timer.getTime() * 3)
         self.continue_prompt.color[4] = alpha
@@ -53,15 +67,6 @@ WinFightScene.Update = function (self, dt)
 end
 
 WinFightScene.Exit = function (_)
-end
-
-function WinFightScene:HandleKeyPressed(key)
-    if key == "space" or key == "return" then
-        BattleManager.Reset()
-        SceneManager.SwitchTo(Scenes.MainMenu)
-        return true
-    end
-    return false
 end
 
 return WinFightScene

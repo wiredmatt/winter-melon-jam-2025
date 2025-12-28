@@ -3,11 +3,16 @@ local BattleManager = require("src.scenes.Battle.BattleManager")
 ---@class LoseFightScene : Scene
 local LoseFightScene = {
     name = "LoseFight",
+    inputmap = require("src.scenes.LoseFight.inputmap"),
     ---@type nil|Label
     continue_prompt = nil
 }
 
 LoseFightScene.Enter = function (self)
+    InputManager.DefineMap(self.name)
+    InputManager.LoadBindings(self.name, self.inputmap.bindings)
+    InputManager.SetActiveMap(self.name)
+
     local tiny5_16px_font = AssetManager.assets.fonts.Tiny5_ttf[16]
     tiny5_16px_font:setFilter("nearest", "nearest")
 
@@ -47,7 +52,16 @@ LoseFightScene.Draw = function (self)
     self.root_node:Draw()
 end
 
+LoseFightScene.HandleInput = function (self)
+    if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
+        BattleManager.Reset()
+        SceneManager.SwitchTo(Scenes.Battle)
+    end
+end
+
 LoseFightScene.Update = function (self, dt)
+    self:HandleInput()
+
     if self.continue_prompt then
         local alpha = 0.5 + 0.5 * math.sin(love.timer.getTime() * 3)
         self.continue_prompt.color[4] = alpha
@@ -55,15 +69,6 @@ LoseFightScene.Update = function (self, dt)
 end
 
 LoseFightScene.Exit = function (_)
-end
-
-function LoseFightScene:HandleKeyPressed(key)
-    if key == "space" or key == "return" then
-        BattleManager.Reset()
-        SceneManager.SwitchTo(Scenes.Battle)
-        return true
-    end
-    return false
 end
 
 return LoseFightScene

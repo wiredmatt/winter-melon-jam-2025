@@ -52,14 +52,14 @@ local BATTLES = {
     {
         id = 2,
         opening_dialogue = {
-            { speaker = "Shadowy Figure", text = "Another one seeking power?{{pause=400}}\nHow dull." },
+            { speaker = "The Rogue", text = "Another one seeking power?{{pause=400}}\nHow dull." },
         },
         enemy = {
-            name = "Shadow Seeker",
+            name = "The Rogue",
             max_hp = 40,
             attack_power = 7,
             sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
+            sprite_quad = love.graphics.newQuad(96, 0, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = "explode",
             attack_animation = "zigzag",  -- Shadowy, erratic movement
         },
@@ -70,7 +70,7 @@ local BATTLES = {
             "Feel the shadows!",
         },
         closing_dialogue = {
-            { speaker = "Shadow Seeker", text = "You... you actually did it.{{pause=800}}\nTake what you've earned." },
+            { speaker = "The Rogue", text = "You... you actually did it.{{pause=800}}\nTake what you've earned." },
         },
     },
 
@@ -78,14 +78,40 @@ local BATTLES = {
     {
         id = 3,
         opening_dialogue = {
-            { speaker = "Masked One", text = "You've claimed two masks already.{{pause=500}}\nLet's see if you deserve a third." },
+            { speaker = "Cursed One", text = "You've claimed two masks already.{{pause=500}}\nLet's see if you deserve a third." },
         },
         enemy = {
-            name = "Mask Guardian",
+            name = "Cursed One",
+            max_hp = 60,
+            attack_power = 10,
+            sprite_image = AssetManager.assets.sprites.monsters_png,
+            sprite_quad = love.graphics.newQuad(64, 128, 32, 32, AssetManager.assets.sprites.monsters_png),
+            death_animation = "slide",
+            attack_animation = "dash",
+        },
+        player_attack_animation = "zigzag",
+        bark_lines = {
+            "The weight of power crushes the weak!",
+            "Do you feel it yet?",
+            "Your strength... impressive.",
+        },
+        closing_dialogue = {
+            { speaker = "Cursed One", text = "You've proven yourself.{{pause=600}}\nThe third mask is yours." },
+        },
+    },
+
+    -- Battle 4
+    {
+        id = 4,
+        opening_dialogue = {
+            { speaker = "The Guardian", text = "Three masks...{{pause=700}}\nBut can you handle the burden of four?" },
+        },
+        enemy = {
+            name = "The Guardian",
             max_hp = 50,
             attack_power = 8,
             sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
+            sprite_quad = love.graphics.newQuad(128, 32, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = "fade",
             attack_animation = "arc_tackle",  -- Graceful, controlled arc
         },
@@ -96,33 +122,7 @@ local BATTLES = {
             "Show me your resolve!",
         },
         closing_dialogue = {
-            { speaker = "Mask Guardian", text = "You've proven yourself.{{pause=600}}\nThe third mask is yours." },
-        },
-    },
-
-    -- Battle 4
-    {
-        id = 4,
-        opening_dialogue = {
-            { speaker = "Ancient Voice", text = "Three masks...{{pause=700}}\nBut can you handle the burden of four?" },
-        },
-        enemy = {
-            name = "Ancient One",
-            max_hp = 60,
-            attack_power = 10,
-            sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
-            death_animation = "slide",
-            attack_animation = "dash",  -- Ancient and swift
-        },
-        player_attack_animation = "zigzag",
-        bark_lines = {
-            "The weight of power crushes the weak!",
-            "Do you feel it yet?",
-            "Your strength... impressive.",
-        },
-        closing_dialogue = {
-            { speaker = "Ancient One", text = "Four masks...{{pause=500}}\nOne remains.{{pause=800}}\nBut the final trial will test everything." },
+            { speaker = "The Guardian", text = "Four masks...{{pause=500}}\nOne remains.{{pause=800}}\nBut the final trial will test everything." },
         },
     },
 
@@ -137,7 +137,7 @@ local BATTLES = {
             max_hp = 80,
             attack_power = 12,
             sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
+            sprite_quad = love.graphics.newQuad(160, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
             death_animation = {  -- Epic boss death with overrides
                 preset = "spin_fall",
                 overrides = {
