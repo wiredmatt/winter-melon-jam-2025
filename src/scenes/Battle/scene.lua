@@ -22,11 +22,13 @@ local ScreenShake = require("src.scenes.Battle.ScreenShake")
 ---@field floating_text FloatingText
 ---@field screen_shake ScreenShake
 ---@field pending_enemy_attack boolean
+---@field transitioning boolean
 local BattleScene = {
     name = "Battle",
     transition_in = SceneManager.Transitions.FadeIn.New(),
     transition_out = SceneManager.Transitions.FadeOut.New(),
-    inputmap = require("src.scenes.Battle.inputmap")
+    inputmap = require("src.scenes.Battle.inputmap"),
+    transitioning = false
 }
 
 -- Battle states

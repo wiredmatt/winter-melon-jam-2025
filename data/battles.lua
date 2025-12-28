@@ -126,14 +126,14 @@ local BATTLES = {
         },
     },
 
-    -- Battle 5 - Final Battle
+    -- Battle 5
     {
         id = 5,
         opening_dialogue = {
-            { speaker = "The Betrayer", text = "So you've made it this far.{{pause=800}}\nI was the one who took them from you.{{pause=600}}\nAnd now...{{pause=400}} you want them back?" },
+            { speaker = "The Usurper", text = "So you've made it this far.{{pause=800}}\nI was the one who took them from you.{{pause=600}}\nAnd now...{{pause=400}} you want them back?" },
         },
         enemy = {
-            name = "The Betrayer",
+            name = "The Usurper",
             max_hp = 80,
             attack_power = 12,
             sprite_image = AssetManager.assets.sprites.rogues_png,
@@ -161,7 +161,7 @@ local BATTLES = {
             "You can't win!",
         },
         closing_dialogue = {
-            { speaker = "The Betrayer", text = "I... I understand now.{{pause=1000}}\nThe masks chose you for a reason.{{pause=800}}\nTake them... and rule wisely." },
+            { speaker = "The Usurper", text = "I... I understand now.{{pause=1000}}\nThe masks chose you for a reason.{{pause=800}}\nTake them... and rule wisely." },
         },
     },
 }
