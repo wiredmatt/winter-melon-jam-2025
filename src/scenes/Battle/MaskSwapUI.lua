@@ -1,3 +1,4 @@
+local SoundPoolPicker = require "lib.SoundPoolPicker"
 ---@class MaskSwapUIConfig
 ---@field screen_width number
 ---@field screen_height number
@@ -286,15 +287,19 @@ MaskSwapUI.HandleInput = function(self)
     local has_input = false
 
     if InputManager.JustPressed(self.inputmap.actions.NAVIGATE_UP) then
+        SoundPoolPicker.Play("click")
         dy = -1
         has_input = true
     elseif InputManager.JustPressed(self.inputmap.actions.NAVIGATE_DOWN) then
+        SoundPoolPicker.Play("click")
         dy = 1
         has_input = true
     elseif InputManager.JustPressed(self.inputmap.actions.NAVIGATE_LEFT) then
+        SoundPoolPicker.Play("click")
         dx = -1
         has_input = true
     elseif InputManager.JustPressed(self.inputmap.actions.NAVIGATE_RIGHT) then
+        SoundPoolPicker.Play("click")
         dx = 1
         has_input = true
     end
@@ -304,6 +309,7 @@ MaskSwapUI.HandleInput = function(self)
     end
 
     if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
+        SoundPoolPicker.Play("click")
         self.root_node:ActivateFocused()
     end
 end

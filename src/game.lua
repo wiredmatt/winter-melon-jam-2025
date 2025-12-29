@@ -6,6 +6,16 @@ Game.Load = function (self)
     Settings.ApplyVideoSettings()
     AudioManager.Init(Settings.current.audio)
 
+    local SoundPoolPicker = require("lib.SoundPoolPicker")
+    if AssetManager.assets.sfx then
+        local click_sounds = {}
+        table.insert(click_sounds, AssetManager.assets.sfx.click1_wav)
+        -- todo add more click sounds for variety
+        if #click_sounds > 0 then
+            SoundPoolPicker.RegisterPool("click", click_sounds)
+        end
+    end
+
     SceneManager.RegisterAll(Scenes)
     SceneManager.SwitchTo(Scenes.MainMenu)
 end

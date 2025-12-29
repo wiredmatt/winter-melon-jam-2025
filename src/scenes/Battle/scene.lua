@@ -12,6 +12,7 @@ local MaskSwapUI = require("src.scenes.Battle.MaskSwapUI")
 local MaskUnlockedUI = require("src.scenes.Battle.MaskUnlockedUI")
 local MaskManager = require("src.scenes.Battle.MaskManager")
 local MASKS = require("data.masks")
+local SoundPoolPicker = require("lib.SoundPoolPicker")
 
 ---@class BattleScene : Scene
 ---@field state string current battle state
@@ -401,6 +402,7 @@ BattleScene.HandleInput = function (self)
         end
 
         if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
+            SoundPoolPicker.Play("click")
             self.battle_ui.root_node:ActivateFocused()
         end
     end

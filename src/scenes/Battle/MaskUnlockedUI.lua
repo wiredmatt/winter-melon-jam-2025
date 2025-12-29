@@ -41,7 +41,7 @@ MaskUnlockedUI.Show = function(self, mask)
     self.visible = true
     self.unlocked_mask = mask
 
-    love.audio.play(AssetManager.assets.sfx.mask_unlocked_wav)
+    AudioManager.PlaySFX(AssetManager.assets.sfx.mask_unlocked_wav)
 
     self.root_node = UI.Node.New()
 

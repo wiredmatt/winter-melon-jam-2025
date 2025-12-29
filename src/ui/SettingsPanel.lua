@@ -1,3 +1,5 @@
+local SoundPoolPicker = require("lib.SoundPoolPicker")
+
 ---@class SettingsPanelConfig
 ---@field x number?
 ---@field y number?
@@ -234,6 +236,7 @@ SettingsPanel.New = function (config)
         focusable = true
     })
     reset_button.OnClick = function()
+        SoundPoolPicker.Play("click")
         Settings.Reset()
         RefreshUI()
     end
@@ -250,6 +253,7 @@ SettingsPanel.New = function (config)
     })
     back_button.OnClick = function()
         if config.on_back then
+            SoundPoolPicker.Play("click")
             config.on_back()
         end
     end

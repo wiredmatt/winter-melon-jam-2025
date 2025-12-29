@@ -1,6 +1,7 @@
 local BattleSceneConfig = require("src.scenes.Battle.config")
 local CHARACTERS        = require("data.characters")
 local MASKS             = require("data.masks")
+local SoundPoolPicker   = require("lib.SoundPoolPicker")
 
 ---@class BattleUIConfig
 ---@field battle_config BattleConfig

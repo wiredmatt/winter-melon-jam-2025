@@ -39,7 +39,7 @@ Settings.GetDefaults = function ()
         audio = {
             master_volume = 1.0,
             music_volume = 1.0,
-            sfx_volume = 1.0,
+            sfx_volume = 0.1,
         },
         flags = {
             intro_seen = false

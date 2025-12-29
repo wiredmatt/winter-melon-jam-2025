@@ -1,3 +1,4 @@
+local SoundPoolPicker = require "lib.SoundPoolPicker"
 ---@class MainMenuScene : Scene
 local MainMenuScene = {
     name = "MainMenu",
@@ -44,6 +45,7 @@ MainMenuScene.BuildGUI = function (self)
         focusable = true
     })
     start_button.OnClick = function()
+        SoundPoolPicker.Play("click")
         SceneManager.SwitchTo(Scenes.Gameplay)
     end
 
@@ -59,6 +61,7 @@ MainMenuScene.BuildGUI = function (self)
         focusable = true
     })
     options_button.OnClick = function()
+        SoundPoolPicker.Play("click")
         SceneManager.SwitchTo(Scenes.Settings, SceneManager.Transitions.NONE, SceneManager.Transitions.NONE)
     end
     self.root_node:AddChild(options_button)

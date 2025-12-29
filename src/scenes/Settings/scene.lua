@@ -1,6 +1,7 @@
 local Node = require("lib.ui.Node")
 local SettingsPanel = require("src.ui.SettingsPanel")
 local inputmap = require("src.scenes.Settings.inputmap")
+local SoundPoolPicker = require("lib.SoundPoolPicker")
 
 local actions = inputmap.actions
 local bindings = inputmap.bindings
@@ -52,16 +53,19 @@ SettingsScene.HandleInput = function (self, dt)
             local slider_input_handled = false
 
             if InputManager.IsDown(actions.LEFT) then
+                SoundPoolPicker.Play("click")
                 local new_value = math.max(focused.min or 0, focused.value - SLIDER_STEP)
                 focused:SetValue(new_value)
                 slider_input_handled = true
             elseif InputManager.IsDown(actions.RIGHT) then
+                SoundPoolPicker.Play("click")
                 local new_value = math.min(focused.max or 1, focused.value + SLIDER_STEP)
                 focused:SetValue(new_value)
                 slider_input_handled = true
             else
                 local axis_x = InputManager.GetValue(actions.HORIZONTAL)
                 if math.abs(axis_x) > AXIS_THRESHOLD then
+                    SoundPoolPicker.Play("click")
                     local new_value = focused.value + (axis_x * SLIDER_STEP)
                     new_value = math.max(focused.min or 0, math.min(focused.max or 1, new_value))
                     focused:SetValue(new_value)
@@ -79,6 +83,7 @@ SettingsScene.HandleInput = function (self, dt)
         if focused.Toggle and focused.checked ~= nil then
             focused = focused --[[@as Checkbox]]
             if InputManager.JustPressed(actions.CONFIRM) then
+                SoundPoolPicker.Play("click")
                 focused:Toggle()
                 input_cooldown = INPUT_COOLDOWN_TIME
                 return
@@ -139,12 +144,14 @@ SettingsScene.HandleInput = function (self, dt)
         local tab_container = self.settings_panel.tab_container
 
         if InputManager.JustPressed(actions.PREV_TAB) then
+            SoundPoolPicker.Play("click")
             local new_index = tab_container.active_tab_index - 1
             if new_index < 1 then
                 new_index = #tab_container.tabs
             end
             tab_container:SetActiveTab(new_index)
         elseif InputManager.JustPressed(actions.NEXT_TAB) then
+            SoundPoolPicker.Play("click")
             local new_index = tab_container.active_tab_index + 1
             if new_index > #tab_container.tabs then
                 new_index = 1
