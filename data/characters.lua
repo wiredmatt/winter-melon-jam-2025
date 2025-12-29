@@ -18,9 +18,9 @@ local CHARACTERS = {
             -- map each other mask to its position on player sprite
             ["balanced_mask"] = { x = 4, y = 2 },
             ["opportunist_mask"] = { x = 4, y = 2 },
-            ["cursed_mask"] = { x = 8, y = -6 },
-            ["guardian_mask"] = { x = 8, y = -6 },
-            ["usurper_mask"] = { x = 8, y = -6 },
+            ["cursed_mask"] = { x = 4, y = 2 },
+            ["guardian_mask"] = { x = 4, y = 2 },
+            ["usurper_mask"] = { x = 3, y = 2 },
         }
     },
     TheApostle = {
@@ -88,7 +88,7 @@ local CHARACTERS = {
                 duration = 1.2,
             }
         },
-        mask_pos = {x = 8, y = -6},
+        mask_pos = {x = 8, y = -4},
     }
 }
 

@@ -86,10 +86,9 @@ local MASKS = {
     -- Battle 3 reward
     {
         id = "cursed_mask",
-        name = "Cursed One's Mask",
+        name = "Cursed Mask",
         description = "Consumed by the very power they stole. You freed them from their torment.",
-        sprite_image = AssetManager.assets.sprites.monsters_png,
-        sprite_quad = love.graphics.newQuad(0, 144, 16, 16, AssetManager.assets.sprites.monsters_png),
+        sprite_image = AssetManager.assets.sprites.cursed_mask_png,
         passive = {
             type = "lifesteal",
             value = 0.25
@@ -108,10 +107,9 @@ local MASKS = {
     -- Battle 4 reward
     {
         id = "guardian_mask",
-        name = "The Guardian's Mask",
+        name = "Iron Mask",
         description = "They chose duty over friendship. In the end, they saw the truth too late.",
-        sprite_image = AssetManager.assets.sprites.rogues_png,
-        sprite_quad = love.graphics.newQuad(48, 96, 16, 16, AssetManager.assets.sprites.rogues_png),
+        sprite_image = AssetManager.assets.sprites.iron_mask_png,
         passive = {
             type = "armor",
             value = 0.2
@@ -132,8 +130,7 @@ local MASKS = {
         id = "usurper_mask",
         name = "The Usurper's Mask",
         description = "The mask of your closest friend and greatest betrayer. The crown is yours once more.",
-        sprite_image = AssetManager.assets.sprites.rogues_png,
-        sprite_quad = love.graphics.newQuad(64, 96, 16, 16, AssetManager.assets.sprites.rogues_png),
+        sprite_image = AssetManager.assets.sprites.usurper_mask_png,
         passive = {
             type = "berserk",
             value = 0.5
