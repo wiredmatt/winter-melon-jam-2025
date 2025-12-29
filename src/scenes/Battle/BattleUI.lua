@@ -129,7 +129,11 @@ BattleUI._setupUI = function(self, config)
         local MaskManager = require("src.scenes.Battle.MaskManager")
         local equipped_mask = MaskManager.GetEquippedMask()
         if equipped_mask then
-            self.player_mask_sprite = self:CreateMaskSprite(equipped_mask.id, CHARACTERS.Player.mask_pos)
+            local mask_pos = CHARACTERS.Player.mask_pos
+            if CHARACTERS.Player.other_masks_pos_map and CHARACTERS.Player.other_masks_pos_map[equipped_mask.id] then
+                mask_pos = CHARACTERS.Player.other_masks_pos_map[equipped_mask.id]
+            end
+            self.player_mask_sprite = self:CreateMaskSprite(equipped_mask.id, mask_pos)
             self.player_sprite:AddChild(self.player_mask_sprite)
         end
     end
@@ -284,8 +288,12 @@ BattleUI.UpdatePlayerMask = function(self, mask_id)
         self.player_sprite:RemoveChild(self.player_mask_sprite)
     end
 
-    local player_mask_pos = {x = 8, y = -6}
-    self.player_mask_sprite = self:CreateMaskSprite(mask_id, player_mask_pos)
+    local mask_pos = CHARACTERS.Player.mask_pos
+    if CHARACTERS.Player.other_masks_pos_map and CHARACTERS.Player.other_masks_pos_map[mask_id] then
+        mask_pos = CHARACTERS.Player.other_masks_pos_map[mask_id]
+    end
+
+    self.player_mask_sprite = self:CreateMaskSprite(mask_id, mask_pos)
     self.player_sprite:AddChild(self.player_mask_sprite)
 end
 

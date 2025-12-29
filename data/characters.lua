@@ -9,10 +9,19 @@
 ---@field attack_animation string|table? Attack animation preset or config
 ---@field intro_animation string|table? Intro animation preset or config
 ---@field mask_pos {x: number, y: number}? Position offset for mask sprite relative to character sprite
+---@field other_masks_pos_map table<string, {x: number, y: number}>? Map of mask IDs to positions (player only)
 
 local CHARACTERS = {
     Player = {
-        mask_pos = { x = 3, y = 2 }
+        mask_pos = { x = 3, y = 2 },  -- default pos, for fractured_crown
+        other_masks_pos_map = {
+            -- map each other mask to its position on player sprite
+            ["balanced_mask"] = { x = 4, y = 2 },
+            ["opportunist_mask"] = { x = 4, y = 2 },
+            ["cursed_mask"] = { x = 8, y = -6 },
+            ["guardian_mask"] = { x = 8, y = -6 },
+            ["usurper_mask"] = { x = 8, y = -6 },
+        }
     },
     TheApostle = {
         name = "The Apostle",
