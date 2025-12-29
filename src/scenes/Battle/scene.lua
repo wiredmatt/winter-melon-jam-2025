@@ -116,6 +116,9 @@ BattleScene.Enter = function (self)
         local main_asset = AssetManager.assets.music[self.battle_config.music_main]
         if main_asset then
             self.main_music_source = main_asset
+            print(string.format("[BattleScene] Loaded main music: %s", self.battle_config.music_main))
+        else
+            print(string.format("[BattleScene] WARNING: Main music asset not found: %s", self.battle_config.music_main))
         end
     end
 
@@ -123,6 +126,9 @@ BattleScene.Enter = function (self)
         local secondary_asset = AssetManager.assets.music[self.battle_config.music_secondary]
         if secondary_asset then
             self.secondary_music_source = secondary_asset
+            print(string.format("[BattleScene] Loaded secondary music: %s", self.battle_config.music_secondary))
+        else
+            print(string.format("[BattleScene] WARNING: Secondary music asset not found: %s", self.battle_config.music_secondary))
         end
     end
 
@@ -192,7 +198,7 @@ BattleScene.Enter = function (self)
             self.battle_ui:UpdateEnemyHP(remaining_hp, self.combat:GetEnemyMaxHP())
 
             -- Check for music transition on enemy HP threshold
-            self:CheckMusicTransition()
+            self:CheckMusicTransition(remaining_hp, self.combat:GetEnemyMaxHP())
         end,
 
         on_player_heal = function(heal_amount, new_hp)
@@ -351,6 +357,9 @@ BattleScene.SetupBattleUI = function (self)
     -- Start battle music
     if self.main_music_source then
         self.current_music_source = AudioManager.PlayMusic(self.main_music_source, true)
+        print("[BattleScene] Main battle music started playing")
+    else
+        print("[BattleScene] WARNING: No main music source to play!")
     end
 end
 
@@ -484,23 +493,46 @@ BattleScene.HandleInput = function (self)
     end
 end
 
-BattleScene.CheckMusicTransition = function (self)
+BattleScene.CheckMusicTransition = function (self, enemy_hp, enemy_max_hp)
     -- Don't trigger if already triggered or no secondary music
-    if self.music_transition_triggered or not self.secondary_music_source then
+    if self.music_transition_triggered then
         return
     end
 
+    if not self.secondary_music_source then
+        return
+    end
+
+    -- Use provided HP values or fall back to combat object
+    enemy_hp = enemy_hp or self.combat.enemy_hp
+    enemy_max_hp = enemy_max_hp or self.combat.enemy_max_hp
+
     -- Calculate threshold (default 0.25 if not specified)
     local threshold = self.battle_config.music_transition_threshold or BattleSceneConfig.MUSIC.TRANSITION_THRESHOLD
-    local enemy_hp = self.combat.enemy_hp
-    local enemy_max_hp = self.combat.enemy_max_hp
+    local hp_percent = enemy_hp / enemy_max_hp
 
     -- Check if HP dropped below threshold
     if enemy_hp <= enemy_max_hp * threshold and enemy_hp > 0 then
+        print(string.format("[BattleScene] Music transition triggered! HP: %d/%d (%.1f%%), threshold: %.1f%%",
+            enemy_hp, enemy_max_hp, hp_percent * 100, threshold * 100))
+
         self.music_transition_triggered = true
+
+        -- Verify music sources before crossfade
+        if not self.current_music_source then
+            print("[BattleScene] WARNING: current_music_source is nil, cannot crossfade!")
+            return
+        end
+
+        if not self.current_music_source:isPlaying() then
+            print("[BattleScene] WARNING: current_music_source is not playing, cannot crossfade!")
+            return
+        end
 
         -- Trigger crossfade with position sync
         local crossfade_duration = BattleSceneConfig.MUSIC.CROSSFADE_DURATION
+        print(string.format("[BattleScene] Starting crossfade (duration: %.1fs, sync_position: true)", crossfade_duration))
+
         AudioManager.CrossfadeMusic(
             self.current_music_source,
             self.secondary_music_source,

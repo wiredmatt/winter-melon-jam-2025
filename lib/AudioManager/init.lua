@@ -129,6 +129,8 @@ AudioManager.StopAllMusic = function ()
         end
     end
     AudioManager.CleanupStoppedSources()
+    -- Clear crossfade state when stopping all music
+    AudioManager.music_crossfade = nil
 end
 
 AudioManager.StopAllSFX = function ()
@@ -157,6 +159,9 @@ AudioManager.CrossfadeMusic = function(from_source, to_source, duration, sync_po
     local start_position = 0
     if sync_position and from_source and from_source:isPlaying() then
         start_position = from_source:tell()
+        print(string.format("[AudioManager] Syncing position: %.2f seconds", start_position))
+    else
+        print("[AudioManager] Not syncing position (from_source not playing or sync disabled)")
     end
 
     -- Start to_source at the synchronized position
@@ -172,6 +177,11 @@ AudioManager.CrossfadeMusic = function(from_source, to_source, duration, sync_po
     -- Set initial volume to 0 for fade in
     to_source:setVolume(0)
     to_source:play()
+
+    print(string.format("[AudioManager] Crossfade started: duration=%.1fs, from=%s, to=%s",
+        duration,
+        from_source and "active" or "nil",
+        to_source and "active" or "nil"))
 
     -- Store crossfade state
     AudioManager.music_crossfade = {
@@ -212,6 +222,8 @@ AudioManager.UpdateCrossfade = function(dt)
 
     -- Check if crossfade is complete
     if progress >= 1.0 then
+        print("[AudioManager] Crossfade complete!")
+
         -- Stop and remove from_source
         if crossfade.from then
             crossfade.from:stop()

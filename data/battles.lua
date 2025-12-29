@@ -1,5 +1,4 @@
 local CHARACTERS = require("data.characters")
-local MASKS = require("data.masks")
 
 -- each battle has: opening dialogue, enemy data, bark lines, and closing dialogue
 

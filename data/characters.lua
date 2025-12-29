@@ -27,7 +27,7 @@ local CHARACTERS = {
     },
     TheApostle = {
         name = "The Apostle",
-        max_hp = 30,
+        max_hp = 80,
         attack_power = 5,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
@@ -38,7 +38,7 @@ local CHARACTERS = {
     },
     TheRogue = {
         name = "The Rogue",
-        max_hp = 40,
+        max_hp = 70,
         attack_power = 7,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(96, 0, 32, 32, AssetManager.assets.sprites.rogues_png),
@@ -49,7 +49,7 @@ local CHARACTERS = {
     },
     TheCursedOne = {
         name = "Cursed One",
-        max_hp = 60,
+        max_hp = 80,
         attack_power = 10,
         sprite_image = AssetManager.assets.sprites.monsters_png,
         sprite_quad = love.graphics.newQuad(64, 128, 32, 32, AssetManager.assets.sprites.monsters_png),
@@ -60,7 +60,7 @@ local CHARACTERS = {
     },
     TheGuardian = {
         name = "The Guardian",
-        max_hp = 50,
+        max_hp = 100,
         attack_power = 8,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(128, 32, 32, 32, AssetManager.assets.sprites.rogues_png),
@@ -71,7 +71,7 @@ local CHARACTERS = {
     },
     TheUsurper = {
         name = "The Usurper",
-        max_hp = 80,
+        max_hp = 90,
         attack_power = 12,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(160, 64, 32, 32, AssetManager.assets.sprites.rogues_png),

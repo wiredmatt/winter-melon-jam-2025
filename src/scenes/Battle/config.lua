@@ -49,7 +49,7 @@ local BattleSceneConfig = {
     },
 
     COMBAT = {
-        PLAYER_MAX_HP = 50,
+        PLAYER_MAX_HP = 100,
         PLAYER_ATTACK_POWER = 10,
         PLAYER_DAMAGE_VARIANCE = 2,      -- +/- random damage
         ENEMY_DAMAGE_VARIANCE = 1,       -- +/- random damage
@@ -64,7 +64,7 @@ local BattleSceneConfig = {
 
     MUSIC = {
         CROSSFADE_DURATION = 2.0,  -- Crossfade duration in seconds
-        TRANSITION_THRESHOLD = 0.25,  -- Default HP percentage for music transition
+        TRANSITION_THRESHOLD = 0.8,  -- Default HP percentage for music transition
     },
 }
 
