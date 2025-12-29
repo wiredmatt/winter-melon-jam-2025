@@ -98,15 +98,9 @@ SkillSystem.TriggerPassiveOnDamageDealt = function(damage, mask, combat)
         local heal_amount = math.floor(damage * heal_percent)
         effects.lifesteal_amount = heal_amount
 
-        -- apply healing to player
-        combat.player_hp = math.min(combat.player_max_hp, combat.player_hp + heal_amount)
-
-        -- notify UI of healing
-        if combat.on_player_heal then
-            combat.on_player_heal(heal_amount, combat.player_hp)
-        end
-
-        print("[SkillSystem] Lifesteal: healed for " .. heal_amount .. " HP")
+        -- Note: healing application is handled by the caller (Combat.lua)
+        -- to ensure correct target (player or enemy)
+        print("[SkillSystem] Lifesteal: " .. heal_amount .. " HP heal")
     end
 
     return effects

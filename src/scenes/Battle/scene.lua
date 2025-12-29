@@ -207,6 +207,12 @@ BattleScene.Enter = function (self)
             self.battle_ui:UpdatePlayerHP(new_hp, self.combat:GetPlayerMaxHP())
         end,
 
+        on_enemy_heal = function(heal_amount, new_hp)
+            local x, y = self.battle_ui:GetEnemySpritePosition()
+            self.floating_text:Spawn("+" .. heal_amount, x, y, BattleSceneConfig.COLORS.SKILL_READY)
+            self.battle_ui:UpdateEnemyHP(new_hp, self.combat:GetEnemyMaxHP())
+        end,
+
         on_enemy_defeat = function()
             local death_config = self.battle_config.enemy.death_animation or "spin_fall"
 

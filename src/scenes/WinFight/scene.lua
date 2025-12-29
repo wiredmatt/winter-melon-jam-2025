@@ -18,7 +18,7 @@ WinFightScene.Enter = function (self)
 
     self.root_node:AddChild(
         UI.Label.New({
-            text = "VICTORY!",
+            text = "VICTORY.",
             font = tiny5_16px_font,
             x = CONFIG.virtual_cfg.width / 2 - 50,
             y = CONFIG.virtual_cfg.height / 2 - 60,

@@ -13,6 +13,7 @@ local MaskManager = require("src.scenes.Battle.MaskManager")
 ---@field on_player_damage function?
 ---@field on_enemy_damage function?
 ---@field on_player_heal function?
+---@field on_enemy_heal function?
 ---@field on_enemy_defeat function?
 ---@field on_player_defeat function?
 ---@field on_enemy_bark function?
@@ -39,9 +40,11 @@ local MaskManager = require("src.scenes.Battle.MaskManager")
 ---@field enemy_turn_skip boolean Whether enemy should skip next turn
 ---@field player_turn_skip boolean Whether player should skip next turn
 ---@field player_shield_active boolean Whether player has active shield
+---@field enemy_shield_active boolean Whether enemy has active shield
 ---@field on_player_damage function
 ---@field on_enemy_damage function
 ---@field on_player_heal function
+---@field on_enemy_heal function
 ---@field on_enemy_defeat function
 ---@field on_player_defeat function
 ---@field on_enemy_bark function
@@ -78,10 +81,12 @@ Combat.New = function(config)
     self.enemy_turn_skip = false
     self.player_turn_skip = false
     self.player_shield_active = false
+    self.enemy_shield_active = false
 
     self.on_player_damage = config.on_player_damage or function() end
     self.on_enemy_damage = config.on_enemy_damage or function() end
     self.on_player_heal = config.on_player_heal or function() end
+    self.on_enemy_heal = config.on_enemy_heal or function() end
     self.on_enemy_defeat = config.on_enemy_defeat or function() end
     self.on_player_defeat = config.on_player_defeat or function() end
     self.on_enemy_bark = config.on_enemy_bark or function() end
@@ -118,6 +123,17 @@ Combat.PlayerAttack = function(self)
         damage = SkillSystem.ApplyPassiveToDamageDealt(damage, mask)
     end
 
+    -- check if enemy has active shield
+    if self.enemy_shield_active then
+        self.enemy_shield_active = false
+        self.current_turn = "enemy"
+        self.bark_timer = BattleConfig.TIMING.ENEMY_ATTACK_DELAY
+        if self.on_enemy_bark then
+            self.on_enemy_bark("Blocked by shield!")
+        end
+        return {damage = 0, enemy_defeated = false}
+    end
+
     self.enemy_hp = math.max(0, self.enemy_hp - damage)
 
     self.on_enemy_damage(damage, self.enemy_hp)
@@ -126,6 +142,9 @@ Combat.PlayerAttack = function(self)
     if mask then
         local effects = SkillSystem.TriggerPassiveOnDamageDealt(damage, mask, self)
         if effects and effects.lifesteal_amount then
+            -- player heals from lifesteal
+            self.player_hp = math.min(self.player_max_hp, self.player_hp + effects.lifesteal_amount)
+            self.on_player_heal(effects.lifesteal_amount, self.player_hp)
             self.on_passive_triggered("Lifesteal", effects.lifesteal_amount)
         end
     end
@@ -209,16 +228,24 @@ Combat.EnemyAttack = function(self)
 
     -- trigger enemy passive effects on damage dealt (lifesteal, etc)
     if self.enemy_mask then
+        print(string.format("[Combat] Enemy has mask: %s, checking for passive", self.enemy_mask.name or "unknown"))
         local enemy_effects = SkillSystem.TriggerPassiveOnDamageDealt(damage, self.enemy_mask, self)
         if enemy_effects and enemy_effects.lifesteal_amount then
             -- enemy heals from lifesteal
+            local old_hp = self.enemy_hp
             self.enemy_hp = math.min(self.enemy_max_hp, self.enemy_hp + enemy_effects.lifesteal_amount)
-            local x, y = self.on_enemy_damage and 0 or 0  -- placeholder, will be handled in callback
-            if self.on_player_heal then
-                -- reuse player heal callback logic but for enemy (visual only)
-                self.on_passive_triggered("Enemy Lifesteal", enemy_effects.lifesteal_amount)
-            end
+            print(string.format("[Combat] Enemy lifesteal: healed %d HP (%d -> %d)",
+                enemy_effects.lifesteal_amount, old_hp, self.enemy_hp))
+
+            -- Update UI and show visual feedback
+            self.on_enemy_heal(enemy_effects.lifesteal_amount, self.enemy_hp)
+            self.on_passive_triggered("Enemy Lifesteal", enemy_effects.lifesteal_amount)
+        else
+            print(string.format("[Combat] Enemy passive type: %s (not lifesteal)",
+                self.enemy_mask.passive and self.enemy_mask.passive.type or "none"))
         end
+    else
+        print("[Combat] Enemy has no mask equipped!")
     end
 
     if self.player_hp <= 0 then
@@ -259,12 +286,27 @@ Combat.PlayerExecuteSkill = function(self)
     local result = SkillSystem.ExecuteActiveSkill(mask.active, self)
 
     if result.damage > 0 then
+        -- check if enemy has active shield
+        if self.enemy_shield_active then
+            self.enemy_shield_active = false
+            self.current_turn = "enemy"
+            self.bark_timer = BattleConfig.TIMING.ENEMY_ATTACK_DELAY
+            MaskManager.UseSkill(mask.active.name, mask.active.cooldown)
+            if self.on_enemy_bark then
+                self.on_enemy_bark("Blocked by shield!")
+            end
+            return {damage = 0, heal = result.heal, effects = {"Blocked by shield!"}, enemy_defeated = false}
+        end
+
         self.enemy_hp = math.max(0, self.enemy_hp - result.damage)
         self.on_enemy_damage(result.damage, self.enemy_hp)
 
         -- trigger player passive effects on damage dealt (lifesteal, etc)
         local effects = SkillSystem.TriggerPassiveOnDamageDealt(result.damage, mask, self)
         if effects and effects.lifesteal_amount then
+            -- player heals from lifesteal
+            self.player_hp = math.min(self.player_max_hp, self.player_hp + effects.lifesteal_amount)
+            self.on_player_heal(effects.lifesteal_amount, self.player_hp)
             self.on_passive_triggered("Lifesteal", effects.lifesteal_amount)
         end
 
@@ -322,6 +364,21 @@ Combat.EnemyExecuteSkill = function(self)
     if self.enemy_mask.active.effect and self.enemy_mask.active.effect.type == "turn_skip" then
         self.player_turn_skip = true
         self.enemy_turn_skip = false  -- reset in case ExecuteActiveSkill set it
+    end
+
+    -- handle shield: when enemy uses it, activate enemy shield instead of player shield
+    if self.enemy_mask.active.effect and self.enemy_mask.active.effect.type == "shield" then
+        self.enemy_shield_active = true
+        self.player_shield_active = false  -- reset in case ExecuteActiveSkill set it
+    end
+
+    -- handle drain: when enemy uses it, heal enemy instead of player
+    if self.enemy_mask.active.effect and self.enemy_mask.active.effect.type == "drain" and result.heal > 0 then
+        -- Undo the player heal that ExecuteActiveSkill did
+        self.player_hp = math.max(0, self.player_hp - result.heal)
+        -- Heal the enemy instead
+        self.enemy_hp = math.min(self.enemy_max_hp, self.enemy_hp + result.heal)
+        self.on_enemy_heal(result.heal, self.enemy_hp)
     end
 
     -- bark the skill name
