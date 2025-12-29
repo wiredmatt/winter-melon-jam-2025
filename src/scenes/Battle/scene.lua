@@ -209,11 +209,22 @@ BattleScene.Enter = function (self)
 
         on_passive_triggered = function(passive_name, amount)
             -- visual feedback for passive effects
+            -- show text where the thorns/lifesteal damage/healing happens
             local x, y
-            if passive_name == "Thorns" or passive_name == "Lifesteal" then
+            if passive_name == "Thorns" then
+                -- Player has thorns, enemy takes thorns damage -> show at enemy
+                x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.ENEMY_POS.x
+                y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            elseif passive_name == "Enemy Thorns" then
+                -- Enemy has thorns, player takes thorns damage -> show at player
                 x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
                 y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
-            elseif passive_name == "Enemy Thorns" or passive_name == "Enemy Lifesteal" then
+            elseif passive_name == "Lifesteal" then
+                -- Player has lifesteal, player heals -> show at player
+                x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
+                y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            elseif passive_name == "Enemy Lifesteal" then
+                -- Enemy has lifesteal, enemy heals -> show at enemy
                 x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.ENEMY_POS.x
                 y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
             end

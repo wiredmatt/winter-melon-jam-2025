@@ -67,13 +67,8 @@ SkillSystem.TriggerPassiveOnDamageReceived = function(damage, mask, combat)
         local thorns_damage = math.floor(damage * return_percent)
         effects.thorns_damage = thorns_damage
 
-        -- apply thorns damage to enemy
-        combat.enemy_hp = math.max(0, combat.enemy_hp - thorns_damage)
-
-        -- notify UI of enemy damage
-        if combat.on_enemy_damage then
-            combat.on_enemy_damage(thorns_damage, combat.enemy_hp)
-        end
+        -- Note: damage application is handled by the caller (Combat.lua)
+        -- to ensure correct target and visual feedback
 
         print("[SkillSystem] Thorns: dealt " .. thorns_damage .. " damage back")
     end

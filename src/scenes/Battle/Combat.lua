@@ -200,6 +200,9 @@ Combat.EnemyAttack = function(self)
     if mask then
         local effects = SkillSystem.TriggerPassiveOnDamageReceived(damage, mask, self)
         if effects and effects.thorns_damage then
+            -- player thorns damages the enemy
+            self.enemy_hp = math.max(0, self.enemy_hp - effects.thorns_damage)
+            self.on_enemy_damage(effects.thorns_damage, self.enemy_hp)
             self.on_passive_triggered("Thorns", effects.thorns_damage)
         end
     end
