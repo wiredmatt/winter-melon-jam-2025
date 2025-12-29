@@ -137,10 +137,22 @@ BattleScene.Enter = function (self)
         end
     })
 
+    -- find enemy's mask from mask_reward
+    local enemy_mask = nil
+    if self.battle_config.mask_reward then
+        for _, mask in ipairs(MASKS) do
+            if mask.id == self.battle_config.mask_reward then
+                enemy_mask = mask
+                break
+            end
+        end
+    end
+
     -- setup combat with callbacks
     self.combat = Combat.New({
         enemy_max_hp = self.battle_config.enemy.max_hp,
         enemy_attack_power = self.battle_config.enemy.attack_power,
+        enemy_mask = enemy_mask,
         bark_lines = self.battle_config.bark_lines,
 
         on_player_damage = function(damage, remaining_hp)
@@ -197,12 +209,26 @@ BattleScene.Enter = function (self)
 
         on_passive_triggered = function(passive_name, amount)
             -- visual feedback for passive effects
+            local x, y
             if passive_name == "Thorns" or passive_name == "Lifesteal" then
-                local x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
-                local y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+                x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
+                y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            elseif passive_name == "Enemy Thorns" or passive_name == "Enemy Lifesteal" then
+                x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.ENEMY_POS.x
+                y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            end
+
+            if x and y then
                 local text = passive_name .. " " .. amount
                 self.floating_text:Spawn(text, x, y, BattleSceneConfig.FLOATING_TEXT.BARK_COLOR)
             end
+        end,
+
+        on_enemy_skill_used = function(skill_name, _effects)
+            -- visual feedback for enemy skill usage
+            local x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.ENEMY_POS.x
+            local y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            self.floating_text:Spawn(skill_name .. "!", x, y, BattleSceneConfig.FLOATING_TEXT.BARK_COLOR)
         end,
     })
 
@@ -460,7 +486,27 @@ BattleScene.Update = function (self, dt)
             self.enemy_attack_anim:Update(dt)
             if not self.enemy_attack_anim:IsActive() then
                 self.battle_ui:ResetEnemySprite()
-                self.combat:EnemyAttack()
+
+                -- increment enemy turn counter
+                self.combat.enemy_turn_count = self.combat.enemy_turn_count + 1
+
+                -- decide whether to use skill or basic attack
+                -- use skill if: enemy has mask with skill, skill is ready, and hasn't been used yet
+                local should_use_skill = self.combat.enemy_mask and
+                                        self.combat.enemy_mask.active and
+                                        self.combat.enemy_skill_cooldown == 0 and
+                                        not self.combat.enemy_skill_used
+
+                -- Special case: Cursed One (drain skill) waits until turn 2
+                if should_use_skill and self.combat.enemy_mask.id == "cursed_mask" then
+                    should_use_skill = self.combat.enemy_turn_count >= 2
+                end
+
+                if should_use_skill then
+                    self.combat:EnemyExecuteSkill()
+                else
+                    self.combat:EnemyAttack()
+                end
                 self.pending_enemy_attack = false
             end
         end
@@ -471,6 +517,12 @@ BattleScene.Update = function (self, dt)
 
         if not self.player_intro_anim:IsActive() and not self.enemy_intro_anim:IsActive() and
            not self.player_attack_anim:IsActive() and not self.enemy_attack_anim:IsActive() then
+            -- check if player turn should be auto-skipped
+            if self.combat.current_turn == "player" and self.combat.player_turn_skip and
+               self.combat.player_hp > 0 and self.combat.enemy_hp > 0 then
+                self.combat:PlayerAttack()  -- this will handle the skip and switch turn to enemy
+            end
+
             if self.combat.current_turn == "enemy" and self.combat.player_hp > 0 and self.combat.enemy_hp > 0 then
                 self.combat.bark_timer = self.combat.bark_timer - dt
                 if self.combat.bark_timer <= 0 and not self.pending_enemy_attack then
