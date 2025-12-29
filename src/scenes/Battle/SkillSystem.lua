@@ -61,7 +61,7 @@ SkillSystem.TriggerPassiveOnDamageReceived = function(damage, mask, combat)
     local passive_type = mask.passive.type
     local effects = {}
 
-    -- thonrs: return damage to attacker
+    -- thorns: return damage to attacker
     if passive_type == "thorns" then
         local return_percent = mask.passive.value or 0.3
         local thorns_damage = math.floor(damage * return_percent)
@@ -69,6 +69,11 @@ SkillSystem.TriggerPassiveOnDamageReceived = function(damage, mask, combat)
 
         -- apply thorns damage to enemy
         combat.enemy_hp = math.max(0, combat.enemy_hp - thorns_damage)
+
+        -- notify UI of enemy damage
+        if combat.on_enemy_damage then
+            combat.on_enemy_damage(thorns_damage, combat.enemy_hp)
+        end
 
         print("[SkillSystem] Thorns: dealt " .. thorns_damage .. " damage back")
     end
@@ -97,6 +102,11 @@ SkillSystem.TriggerPassiveOnDamageDealt = function(damage, mask, combat)
 
         -- apply healing to player
         combat.player_hp = math.min(combat.player_max_hp, combat.player_hp + heal_amount)
+
+        -- notify UI of healing
+        if combat.on_player_heal then
+            combat.on_player_heal(heal_amount, combat.player_hp)
+        end
 
         print("[SkillSystem] Lifesteal: healed for " .. heal_amount .. " HP")
     end
@@ -147,6 +157,12 @@ SkillSystem.ExecuteActiveSkill = function(skill, combat)
         result.damage = damage
         result.heal = heal
         combat.player_hp = math.min(combat.player_max_hp, combat.player_hp + heal)
+
+        -- notify UI of healing
+        if combat.on_player_heal then
+            combat.on_player_heal(heal, combat.player_hp)
+        end
+
         table.insert(result.effects, "Drained " .. heal .. " HP!")
     elseif effect_type == "shield" then
         combat.player_shield_active = true

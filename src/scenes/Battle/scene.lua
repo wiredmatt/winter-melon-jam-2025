@@ -155,6 +155,12 @@ BattleScene.Enter = function (self)
             self.battle_ui:UpdateEnemyHP(remaining_hp, self.combat:GetEnemyMaxHP())
         end,
 
+        on_player_heal = function(heal_amount, new_hp)
+            local x, y = self.battle_ui:GetPlayerSpritePosition()
+            self.floating_text:Spawn("+" .. heal_amount, x, y, BattleSceneConfig.COLORS.SKILL_READY)
+            self.battle_ui:UpdatePlayerHP(new_hp, self.combat:GetPlayerMaxHP())
+        end,
+
         on_enemy_defeat = function()
             local death_config = self.battle_config.enemy.death_animation or "spin_fall"
 
@@ -468,8 +474,13 @@ BattleScene.Update = function (self, dt)
             if self.combat.current_turn == "enemy" and self.combat.player_hp > 0 and self.combat.enemy_hp > 0 then
                 self.combat.bark_timer = self.combat.bark_timer - dt
                 if self.combat.bark_timer <= 0 and not self.pending_enemy_attack then
-                    self:TriggerEnemyAttack()
-                    self.pending_enemy_attack = true
+                    -- check if turn should be skipped before playing animation
+                    if self.combat.enemy_turn_skip then
+                        self.combat:EnemyAttack()  -- this will handle the skip and switch turn back to player
+                    else
+                        self:TriggerEnemyAttack()
+                        self.pending_enemy_attack = true
+                    end
                 end
             end
         end

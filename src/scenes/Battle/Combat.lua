@@ -11,6 +11,7 @@ local MaskManager = require("src.scenes.Battle.MaskManager")
 ---@field bark_lines string[]
 ---@field on_player_damage function?
 ---@field on_enemy_damage function?
+---@field on_player_heal function?
 ---@field on_enemy_defeat function?
 ---@field on_player_defeat function?
 ---@field on_enemy_bark function?
@@ -33,6 +34,7 @@ local MaskManager = require("src.scenes.Battle.MaskManager")
 ---@field player_shield_active boolean Whether player has active shield
 ---@field on_player_damage function
 ---@field on_enemy_damage function
+---@field on_player_heal function
 ---@field on_enemy_defeat function
 ---@field on_player_defeat function
 ---@field on_enemy_bark function
@@ -66,6 +68,7 @@ Combat.New = function(config)
 
     self.on_player_damage = config.on_player_damage or function() end
     self.on_enemy_damage = config.on_enemy_damage or function() end
+    self.on_player_heal = config.on_player_heal or function() end
     self.on_enemy_defeat = config.on_enemy_defeat or function() end
     self.on_player_defeat = config.on_player_defeat or function() end
     self.on_enemy_bark = config.on_enemy_bark or function() end
@@ -194,6 +197,12 @@ Combat.PlayerExecuteSkill = function(self)
     if result.damage > 0 then
         self.enemy_hp = math.max(0, self.enemy_hp - result.damage)
         self.on_enemy_damage(result.damage, self.enemy_hp)
+
+        -- trigger passive effects on damage dealt (e.g., lifesteal)
+        local effects = SkillSystem.TriggerPassiveOnDamageDealt(result.damage, mask, self)
+        if effects and effects.lifesteal_amount then
+            self.on_passive_triggered("Lifesteal", effects.lifesteal_amount)
+        end
     end
 
     -- set skill on cooldown
