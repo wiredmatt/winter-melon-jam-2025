@@ -30,11 +30,16 @@ end
 ---@param y number Y position
 ---@param color table? RGB color (defaults to bark color)
 FloatingText.Spawn = function(self, text, x, y, color)
+    -- add random positional variance to avoid overlapping
+    local variance = BattleConfig.FLOATING_TEXT.POSITION_VARIANCE or 0
+    local offset_x = math.random(-variance, variance)
+    local offset_y = math.random(-variance, variance)
+
     table.insert(self.texts, {
         text = text,
-        x = x,
-        y = y,
-        start_y = y,
+        x = x + offset_x,
+        y = y + offset_y,
+        start_y = y + offset_y,
         lifetime = 0,
         max_lifetime = BattleConfig.FLOATING_TEXT.MAX_LIFETIME,
         alpha = 0,

@@ -34,10 +34,11 @@ local BattleSceneConfig = {
     },
 
     FLOATING_TEXT = {
-        SLIDE_SPEED = 20,                -- pixels per second upward
-        FADE_IN_TIME = 0.3,
-        FADE_OUT_TIME = 0.5,
-        MAX_LIFETIME = 2.5,
+        SLIDE_SPEED = 25,                -- pixels per second upward (faster)
+        FADE_IN_TIME = 0.2,             -- faster fade in
+        FADE_OUT_TIME = 0.25,             -- faster fade out
+        MAX_LIFETIME = 1.25,              -- shorter duration
+        POSITION_VARIANCE = 10,          -- random X/Y offset range in pixels
         DAMAGE_COLOR = {1, 0.3, 0.3},    -- red
         BARK_COLOR = {1, 1, 0},          -- yellow
     },
