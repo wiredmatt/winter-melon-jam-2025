@@ -12,7 +12,7 @@
 
 local CHARACTERS = {
     Player = {
-        mask_pos = { x = 3, y = 0 }
+        mask_pos = { x = 3, y = 2 }
     },
     TheApostle = {
         name = "The Apostle",
