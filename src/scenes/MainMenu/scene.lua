@@ -14,7 +14,7 @@ MainMenuScene.Enter = function (self)
     InputManager.DefineMap(self.name)
     InputManager.LoadBindings(self.name, self.inputmap.bindings)
     InputManager.SetActiveMap(self.name)
-
+    AudioManager.PlayMusic(AssetManager.assets.music.menu_wav, true)
     self:BuildGUI()
 end
 

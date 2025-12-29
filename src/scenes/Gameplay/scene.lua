@@ -7,6 +7,7 @@ GameplayScene.Enter = function (self)
     if Settings.current.flags.intro_seen then
         SceneManager.SwitchTo(Scenes.Battle)
     else
+        AudioManager.StopAllMusic()
         SceneManager.SwitchTo(Scenes.Intro)
     end
 end

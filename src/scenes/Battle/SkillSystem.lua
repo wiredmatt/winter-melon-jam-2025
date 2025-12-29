@@ -16,7 +16,10 @@ SkillSystem.ApplyPassiveToDamageReceived = function(damage, mask)
     -- armor: reduce incoming damage
     if passive_type == "armor" then
         local reduction = mask.passive.value or 0.2
-        return math.floor(damage * (1 - reduction))
+        local reduced_damage = math.floor(damage * (1 - reduction))
+        print(string.format("[SkillSystem] Armor: %d damage -> %d damage (%.0f%% reduction)",
+            damage, reduced_damage, reduction * 100))
+        return reduced_damage
     end
 
     -- berserk: take more damage

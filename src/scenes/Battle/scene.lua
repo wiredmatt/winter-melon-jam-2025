@@ -62,15 +62,15 @@ BattleScene.Enter = function (self)
         self.initialized = true
     end
 
+    self.battle_config = BattleManager.GetCurrentBattle()
+    if not self.battle_config then error("No battle config found") end
+
     self.root_node = UI.Node.New()
 
     local tiny5_16px_font = AssetManager.assets.fonts.Tiny5_ttf[16]
     tiny5_16px_font:setFilter("nearest", "nearest")
     local tiny5_8px_font = AssetManager.assets.fonts.Tiny5_ttf[8]
     tiny5_8px_font:setFilter("nearest", "nearest")
-
-    self.battle_config = BattleManager.GetCurrentBattle()
-    if not self.battle_config then error("No battle config found") end
 
     MaskManager.ResetCooldowns()
 

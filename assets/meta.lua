@@ -3,6 +3,9 @@
 ---@class GameAssets_fonts
 ---@field Tiny5_ttf ProxiedFont
 
+---@class GameAssets_music
+---@field menu_wav love.Source
+
 ---@class GameAssets_sfx
 ---@field click1_wav love.Source
 ---@field mask_unlocked_wav love.Source
@@ -24,5 +27,6 @@
 
 ---@class GameAssets
 ---@field fonts GameAssets_fonts
+---@field music GameAssets_music
 ---@field sfx GameAssets_sfx
 ---@field sprites GameAssets_sprites
