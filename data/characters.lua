@@ -29,9 +29,9 @@ local CHARACTERS = {
         attack_power = 5,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
-        death_animation = "spin_fall",
-        attack_animation = "straight",
-        intro_animation = "slide_in_right",
+        death_animation = "fade",  -- Fades with conviction, righteous to the end
+        attack_animation = "straight",  -- Disciplined, precise strikes
+        intro_animation = "spin_entry",  -- Ceremonial, formal entrance
         mask_pos = {x = 4, y = 2},
     },
     TheRogue = {
@@ -40,9 +40,9 @@ local CHARACTERS = {
         attack_power = 7,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(96, 0, 32, 32, AssetManager.assets.sprites.rogues_png),
-        death_animation = "explode",
-        attack_animation = "zigzag",
-        intro_animation = "drop_bounce",
+        death_animation = "slide",  -- Slides away into the shadows
+        attack_animation = "zigzag",  -- Unpredictable, tricky strikes
+        intro_animation = "drop_bounce",  -- Drops in unexpectedly from above
         mask_pos = {x = 8, y = -6},
     },
     TheCursedOne = {
@@ -51,9 +51,9 @@ local CHARACTERS = {
         attack_power = 10,
         sprite_image = AssetManager.assets.sprites.monsters_png,
         sprite_quad = love.graphics.newQuad(64, 128, 32, 32, AssetManager.assets.sprites.monsters_png),
-        death_animation = "slide",
-        attack_animation = "dash",
-        intro_animation = "diagonal_spin",
+        death_animation = "fade",  -- Dissolves as the curse releases them
+        attack_animation = "spin_tackle",  -- Erratic, corrupted movements
+        intro_animation = "diagonal_spin",  -- Chaotic, uncontrolled entrance
         mask_pos = {x = 8, y = -6},
     },
     TheGuardian = {
@@ -62,9 +62,9 @@ local CHARACTERS = {
         attack_power = 8,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(128, 32, 32, 32, AssetManager.assets.sprites.rogues_png),
-        death_animation = "fade",
-        attack_animation = "arc_tackle",
-        intro_animation = "spin_entry",
+        death_animation = "fade",  -- Dignified, honorable end
+        attack_animation = "arc_tackle",  -- Defensive, protective counter-strikes
+        intro_animation = "spin_entry",  -- Formal, ceremonial entrance
         mask_pos = {x = 8, y = -6},
     },
     TheUsurper = {
@@ -73,7 +73,7 @@ local CHARACTERS = {
         attack_power = 12,
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(160, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
-        death_animation = {
+        death_animation = {  -- Dramatic fall from power, the crown taken
             preset = "spin_fall",
             overrides = {
                 rotation_speed = math.pi * 10,
@@ -81,8 +81,8 @@ local CHARACTERS = {
                 duration = 2.5,
             }
         },
-        attack_animation = "spin_tackle",
-        intro_animation = {
+        attack_animation = "spin_tackle",  -- Aggressive, overwhelming power
+        intro_animation = {  -- Confident, commanding presence
             preset = "pop_in",
             overrides = {
                 duration = 1.2,

@@ -26,7 +26,7 @@ local MASKS = {
     {
         id = "fractured_crown",
         name = "Fractured Crown",
-        description = "A broken crown from a forgotten ruler. Basic but reliable.",
+        description = "Your shattered crown. Once a symbol of absolute rule, now a reminder of betrayal.",
         sprite_image = AssetManager.assets.sprites.fractured_crown_png,
         passive = {
             type = "none"
@@ -46,7 +46,7 @@ local MASKS = {
     {
         id = "balanced_mask",
         name = "The Balanced Mask",
-        description = "A mask of balanced power and discipline.",
+        description = "The Apostle's mask. His conviction was absolute, even if it was misguided.",
         sprite_image = AssetManager.assets.sprites.balanced_mask_png,
         passive = {
             type = "none"
@@ -66,7 +66,7 @@ local MASKS = {
     {
         id = "opportunist_mask",
         name = "Opportunist Mask",
-        description = "A shadowy mask that punishes those who dare strike you.",
+        description = "The Rogue's mask. A reminder that loyalty means nothing without honor.",
         sprite_image = AssetManager.assets.sprites.opportunist_mask_png,
         passive = {
             type = "thorns",
@@ -87,7 +87,7 @@ local MASKS = {
     {
         id = "cursed_mask",
         name = "Cursed One's Mask",
-        description = "A mask that feeds on the life force of enemies.",
+        description = "Consumed by the very power they stole. You freed them from their torment.",
         sprite_image = AssetManager.assets.sprites.monsters_png,
         sprite_quad = love.graphics.newQuad(0, 144, 16, 16, AssetManager.assets.sprites.monsters_png),
         passive = {
@@ -109,7 +109,7 @@ local MASKS = {
     {
         id = "guardian_mask",
         name = "The Guardian's Mask",
-        description = "A protective mask that shields its wearer from harm.",
+        description = "They chose duty over friendship. In the end, they saw the truth too late.",
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(48, 96, 16, 16, AssetManager.assets.sprites.rogues_png),
         passive = {
@@ -131,7 +131,7 @@ local MASKS = {
     {
         id = "usurper_mask",
         name = "The Usurper's Mask",
-        description = "A mask of overwhelming power, but at a terrible cost.",
+        description = "The mask of your closest friend and greatest betrayer. The crown is yours once more.",
         sprite_image = AssetManager.assets.sprites.rogues_png,
         sprite_quad = love.graphics.newQuad(64, 96, 16, 16, AssetManager.assets.sprites.rogues_png),
         passive = {
