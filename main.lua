@@ -2,6 +2,7 @@ if os.getenv("LOCAL_LUA_DEBUGGER_VSCODE") == "1" then
   require("lldebugger").start()
 end
 
+_G.RELEASE = true
 _G.DEBUG_UI = false
 _G.__NOOP__ = function (...) return nil end
 -- these make sense in global state, they're like singletons.

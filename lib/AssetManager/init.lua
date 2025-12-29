@@ -103,7 +103,7 @@ AssetManager.load_assets = function()
     local contents = table.concat(lines, "\n")
     local workdir = love.filesystem.getWorkingDirectory()
 
-    if FSok then FS.New(workdir):SaveModule(contents, AssetManager.ASSETS_PATH .. "/" .. "meta.lua")
+    if FSok and not _G.RELEASE then FS.New(workdir):SaveModule(contents, AssetManager.ASSETS_PATH .. "/" .. "meta.lua")
     else print(contents) end
 end
 
