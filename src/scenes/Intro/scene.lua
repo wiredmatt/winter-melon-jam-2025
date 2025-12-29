@@ -7,6 +7,7 @@ local IntroScene = {
     name = "Intro",
     transition_in = SceneManager.Transitions.FadeIn.New(),
     transition_out = SceneManager.Transitions.FadeOut.New(),
+    inputmap = require("src.scenes.Intro.inputmap"),
 }
 
 -- story pages config
@@ -70,8 +71,16 @@ IntroScene.Enter = function (self)
     self.root_node:AddChild(self.typewriter)
 end
 
+IntroScene.HandleInput = function (self)
+    if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
+        self:AdvancePage()
+    end
+end
+
 IntroScene.Update = function (self, dt)
     self.root_node:Update(dt)
+
+    self:HandleInput()
 end
 
 IntroScene.Draw = function (self)
@@ -115,29 +124,6 @@ IntroScene.AdvancePage = function (self)
         self.typewriter:SetFullText(page.text, true)
         self.waiting_for_input = false
     end
-end
-
-function IntroScene:HandleMousePressed(x, y, button)
-    if self.root_node.HandleMousePressed then
-        if self.root_node:HandleMousePressed(x, y, button) then
-            return true
-        end
-    end
-
-    if button == 1 then
-        self:AdvancePage()
-        return true
-    end
-
-    return false
-end
-
-function IntroScene:HandleKeyPressed(key)
-    if key == "space" or key == "return" then
-        self:AdvancePage()
-        return true
-    end
-    return false
 end
 
 return IntroScene
