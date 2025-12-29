@@ -106,7 +106,7 @@ BattleUI._setupUI = function(self, config)
         end
     end
 
-    local player_image = AssetManager.assets.sprites.animals_png
+    local player_image = CHARACTERS.Player.sprite_image
     if player_image then
         player_image:setFilter("nearest")
 
@@ -117,7 +117,7 @@ BattleUI._setupUI = function(self, config)
         self.player_home_center_x = player_x
         self.player_home_center_y = player_y
 
-        local player_quad = love.graphics.newQuad(64, 448, 32, 32, player_image)
+        local player_quad = CHARACTERS.Player.sprite_quad
 
         self.player_sprite = UI.Sprite.New({
             image = player_image,

@@ -16,6 +16,9 @@ local MASKS = require("data.masks")
 ---@field player_attack_animation string|table? Player attack animation preset or config
 ---@field player_intro_animation string|table? Player intro animation preset or config
 ---@field mask_reward string? Mask ID rewarded for defeating this enemy
+---@field music_main string? Asset key for main battle music
+---@field music_secondary string? Asset key for secondary battle music (low HP)
+---@field music_transition_threshold number? HP percentage for music transition (default 0.25)
 
 ---@type BattleConfig[]
 local BATTLES = {
@@ -28,6 +31,8 @@ local BATTLES = {
         },
         enemy = CHARACTERS.TheApostle,
         mask_reward = "balanced_mask",
+        music_main = "battle1_main_wav",
+        music_secondary = "battle1_secondary_wav",
         bark_lines = {
             "The old order is dead!",
             "We were right to act!",
@@ -49,6 +54,8 @@ local BATTLES = {
         },
         enemy = CHARACTERS.TheRogue,
         mask_reward = "opportunist_mask",
+        music_main = "battle2_main_wav",
+        music_secondary = "battle2_secondary_wav",
         bark_lines = {
             "I've killed you once already!",
             "Loyalty? That was business.",
@@ -72,6 +79,8 @@ local BATTLES = {
         player_attack_animation = "zigzag",
         player_intro_animation = "pop_in",
         mask_reward = "cursed_mask",
+        music_main = "battle3_main_wav",
+        music_secondary = "battle3_secondary_wav",
         bark_lines = {
             "The masks whisper... they scream!",
             "I can't control it anymore!",
@@ -91,6 +100,8 @@ local BATTLES = {
         },
         enemy = CHARACTERS.TheGuardian,
         mask_reward = "guardian_mask",
+        music_main = "battle4_main_wav",
+        music_secondary = "battle4_secondary_wav",
         bark_lines = {
             "My oath demands this!",
             "I won't fail my duty again!",
@@ -125,6 +136,8 @@ local BATTLES = {
             }
         },
         mask_reward = "usurper_mask",
+        music_main = "battle5_main_wav",
+        music_secondary = "battle5_secondary_wav",
         bark_lines = {
             "I know every move you'll make!",
             "I was there for your every victory!",

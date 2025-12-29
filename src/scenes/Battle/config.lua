@@ -61,6 +61,11 @@ local BattleSceneConfig = {
         TYPEWRITER_PITCH_MIN = 0.95,
         TYPEWRITER_PITCH_MAX = 1.05,
     },
+
+    MUSIC = {
+        CROSSFADE_DURATION = 2.0,  -- Crossfade duration in seconds
+        TRANSITION_THRESHOLD = 0.25,  -- Default HP percentage for music transition
+    },
 }
 
 return BattleSceneConfig

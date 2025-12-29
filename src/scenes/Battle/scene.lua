@@ -35,6 +35,10 @@ local SoundPoolPicker = require("lib.SoundPoolPicker")
 ---@field pending_enemy_attack boolean
 ---@field player_using_skill boolean
 ---@field transitioning boolean
+---@field main_music_source love.Source? Main battle music track
+---@field secondary_music_source love.Source? Secondary battle music track (low HP)
+---@field current_music_source love.Source? Currently playing music source
+---@field music_transition_triggered boolean Whether music transition has been triggered
 local BattleScene = {
     name = "Battle",
     transition_in = SceneManager.Transitions.FadeIn.New(),
@@ -101,6 +105,27 @@ BattleScene.Enter = function (self)
     self.player_using_skill = false
     self.transitioning = false
 
+    -- Initialize music sources
+    AudioManager.StopAllMusic()
+    self.main_music_source = nil
+    self.secondary_music_source = nil
+    self.current_music_source = nil
+    self.music_transition_triggered = false
+
+    if self.battle_config.music_main then
+        local main_asset = AssetManager.assets.music[self.battle_config.music_main]
+        if main_asset then
+            self.main_music_source = main_asset
+        end
+    end
+
+    if self.battle_config.music_secondary then
+        local secondary_asset = AssetManager.assets.music[self.battle_config.music_secondary]
+        if secondary_asset then
+            self.secondary_music_source = secondary_asset
+        end
+    end
+
     self.mask_swap_ui = MaskSwapUI.New({
         screen_width = screen_w,
         screen_height = screen_h,
@@ -165,6 +190,9 @@ BattleScene.Enter = function (self)
             local x, y = self.battle_ui:GetEnemySpritePosition()
             self.floating_text:Spawn("-" .. damage, x, y, BattleSceneConfig.FLOATING_TEXT.DAMAGE_COLOR)
             self.battle_ui:UpdateEnemyHP(remaining_hp, self.combat:GetEnemyMaxHP())
+
+            -- Check for music transition on enemy HP threshold
+            self:CheckMusicTransition()
         end,
 
         on_player_heal = function(heal_amount, new_hp)
@@ -319,6 +347,11 @@ BattleScene.SetupBattleUI = function (self)
         self.battle_ui.enemy_home_center_y,
         enemy_intro_config
     )
+
+    -- Start battle music
+    if self.main_music_source then
+        self.current_music_source = AudioManager.PlayMusic(self.main_music_source, true)
+    end
 end
 
 BattleScene.TriggerPlayerAttack = function (self)
@@ -451,8 +484,39 @@ BattleScene.HandleInput = function (self)
     end
 end
 
+BattleScene.CheckMusicTransition = function (self)
+    -- Don't trigger if already triggered or no secondary music
+    if self.music_transition_triggered or not self.secondary_music_source then
+        return
+    end
+
+    -- Calculate threshold (default 0.25 if not specified)
+    local threshold = self.battle_config.music_transition_threshold or BattleSceneConfig.MUSIC.TRANSITION_THRESHOLD
+    local enemy_hp = self.combat.enemy_hp
+    local enemy_max_hp = self.combat.enemy_max_hp
+
+    -- Check if HP dropped below threshold
+    if enemy_hp <= enemy_max_hp * threshold and enemy_hp > 0 then
+        self.music_transition_triggered = true
+
+        -- Trigger crossfade with position sync
+        local crossfade_duration = BattleSceneConfig.MUSIC.CROSSFADE_DURATION
+        AudioManager.CrossfadeMusic(
+            self.current_music_source,
+            self.secondary_music_source,
+            crossfade_duration,
+            true  -- sync_position
+        )
+
+        self.current_music_source = self.secondary_music_source
+    end
+end
+
 BattleScene.Update = function (self, dt)
     self:HandleInput()
+
+    -- Update music crossfade if active
+    AudioManager.UpdateCrossfade(dt)
 
     if self.state == STATE.OPENING_DIALOGUE or self.state == STATE.CLOSING_DIALOGUE then
         self.dialogue_ui:Update(dt)
@@ -604,6 +668,7 @@ BattleScene.Draw = function (self)
 end
 
 BattleScene.Exit = function (_)
+    AudioManager.StopAllMusic()
 end
 
 return BattleScene

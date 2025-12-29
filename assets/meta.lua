@@ -4,6 +4,8 @@
 ---@field Tiny5_ttf ProxiedFont
 
 ---@class GameAssets_music
+---@field battle1_main_wav love.Source
+---@field battle2_secondary_wav love.Source
 ---@field menu_wav love.Source
 
 ---@class GameAssets_sfx

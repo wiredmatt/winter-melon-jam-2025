@@ -13,6 +13,8 @@
 
 local CHARACTERS = {
     Player = {
+        sprite_image = AssetManager.assets.sprites.rogues_png,
+        sprite_quad = love.graphics.newQuad(128, 192, 32, 32, AssetManager.assets.sprites.rogues_png),
         mask_pos = { x = 3, y = 2 },  -- default pos, for fractured_crown
         other_masks_pos_map = {
             -- map each other mask to its position on player sprite
