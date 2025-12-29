@@ -9,7 +9,9 @@ local IntroAnimation = require("src.scenes.Battle.IntroAnimation")
 local FloatingText = require("src.scenes.Battle.FloatingText")
 local ScreenShake = require("src.scenes.Battle.ScreenShake")
 local MaskSwapUI = require("src.scenes.Battle.MaskSwapUI")
+local MaskUnlockedUI = require("src.scenes.Battle.MaskUnlockedUI")
 local MaskManager = require("src.scenes.Battle.MaskManager")
+local MASKS = require("data.masks")
 
 ---@class BattleScene : Scene
 ---@field state string current battle state
@@ -27,6 +29,7 @@ local MaskManager = require("src.scenes.Battle.MaskManager")
 ---@field floating_text FloatingText
 ---@field screen_shake ScreenShake
 ---@field mask_swap_ui MaskSwapUI
+---@field mask_unlocked_ui MaskUnlockedUI
 ---@field swap_menu_open boolean
 ---@field pending_enemy_attack boolean
 ---@field player_using_skill boolean
@@ -45,6 +48,7 @@ local STATE = {
     OPENING_DIALOGUE = "opening_dialogue",
     BATTLE = "battle",
     CLOSING_DIALOGUE = "closing_dialogue",
+    MASK_UNLOCKED = "mask_unlocked",
     COMPLETE = "complete",
 }
 
@@ -119,6 +123,18 @@ BattleScene.Enter = function (self)
         end
     })
     self.swap_menu_open = false
+
+    self.mask_unlocked_ui = MaskUnlockedUI.New({
+        screen_width = screen_w,
+        screen_height = screen_h,
+        title_font = tiny5_16px_font,
+        body_font = tiny5_8px_font,
+        small_font = tiny5_8px_font,
+        inputmap = self.inputmap,
+        on_continue = function()
+            self:OnMaskUnlockedContinue()
+        end
+    })
 
     -- setup combat with callbacks
     self.combat = Combat.New({
@@ -200,12 +216,21 @@ BattleScene.AdvanceDialogue = function (self)
             self.state = STATE.BATTLE
             self:SetupBattleUI()
         elseif self.state == STATE.CLOSING_DIALOGUE then
-            self.transitioning = true
-            if BattleManager.HasNextBattle() then
-                BattleManager.NextBattle()
-                SceneManager.SwitchTo(Scenes.Battle)
+            if self.battle_config.mask_reward then
+                self.state = STATE.MASK_UNLOCKED
+                local unlocked_mask = nil
+                for _, mask in ipairs(MASKS) do
+                    if mask.id == self.battle_config.mask_reward then
+                        unlocked_mask = mask
+                        break
+                    end
+                end
+                if unlocked_mask then
+                    self.mask_unlocked_ui:Show(unlocked_mask)
+                end
             else
-                SceneManager.SwitchTo(Scenes.WinFight)
+                -- no mask reward, transition directly
+                self:OnMaskUnlockedContinue()
             end
         end
     else
@@ -235,7 +260,6 @@ BattleScene.SetupBattleUI = function (self)
 
     self.root_node:AddChild(self.battle_ui.root_node)
 
-    -- Setup intro animations
     local player_intro_config = self.battle_config.player_intro_animation or "slide_in"
     self.player_intro_anim:Start(
         self.battle_ui.player_sprite,
@@ -315,6 +339,16 @@ BattleScene.OnMaskSwapped = function (self, mask_id)
     self.battle_ui:UpdatePlayerMask(mask_id)
 end
 
+BattleScene.OnMaskUnlockedContinue = function (self)
+    self.transitioning = true
+    if BattleManager.HasNextBattle() then
+        BattleManager.NextBattle()
+        SceneManager.SwitchTo(Scenes.Battle)
+    else
+        SceneManager.SwitchTo(Scenes.WinFight)
+    end
+end
+
 BattleScene.OnActionButtonClicked = function (self, action)
     if action == "attack" and self.combat:IsPlayerTurn() and not self.swap_menu_open then
         self:TriggerPlayerAttack()
@@ -337,6 +371,8 @@ BattleScene.HandleInput = function (self)
                 self.dialogue_ui:Skip()
             end
         end
+    elseif self.state == STATE.MASK_UNLOCKED then
+        self.mask_unlocked_ui:HandleInput()
     elseif self.state == STATE.BATTLE then
         if self.swap_menu_open then
             self.mask_swap_ui:HandleInput()
@@ -375,6 +411,11 @@ BattleScene.Update = function (self, dt)
 
     if self.state == STATE.OPENING_DIALOGUE or self.state == STATE.CLOSING_DIALOGUE then
         self.dialogue_ui:Update(dt)
+        return
+    end
+
+    if self.state == STATE.MASK_UNLOCKED then
+        self.mask_unlocked_ui:Update(dt)
         return
     end
 
@@ -481,6 +522,8 @@ BattleScene.Draw = function (self)
 
     if self.state == STATE.BATTLE then
         self.root_node:Draw()
+    elseif self.state == STATE.MASK_UNLOCKED then
+        self.mask_unlocked_ui:Draw()
     end
 end
 

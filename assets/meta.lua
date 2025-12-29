@@ -4,6 +4,7 @@
 ---@field Tiny5_ttf ProxiedFont
 
 ---@class GameAssets_sfx
+---@field mask_unlocked_wav love.Source
 ---@field typewriter_blip_wav love.Source
 ---@field typewriter_blip2_wav love.Source
 
