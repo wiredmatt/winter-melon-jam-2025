@@ -1,14 +1,7 @@
--- each battle has: opening dialogue, enemy data, bark lines, and closing dialogue
+local CHARACTERS = require("data.characters")
+local MASKS = require("data.masks")
 
----@class BattleEnemy
----@field name string
----@field max_hp number
----@field attack_power number
----@field sprite_image love.Image?
----@field sprite_quad love.Quad?
----@field death_animation string|table? Death animation preset or config
----@field attack_animation string|table? Attack animation preset or config
----@field intro_animation string|table? Intro animation preset or config
+-- each battle has: opening dialogue, enemy data, bark lines, and closing dialogue
 
 ---@class BattleDialogue
 ---@field text string
@@ -17,11 +10,12 @@
 ---@class BattleConfig
 ---@field id number
 ---@field opening_dialogue BattleDialogue[]
----@field enemy BattleEnemy
+---@field enemy CharacterData
 ---@field bark_lines string[] short lines enemy says during combat
 ---@field closing_dialogue BattleDialogue[]
 ---@field player_attack_animation string|table? Player attack animation preset or config
 ---@field player_intro_animation string|table? Player intro animation preset or config
+---@field mask_reward string? Mask ID rewarded for defeating this enemy
 
 ---@type BattleConfig[]
 local BATTLES = {
@@ -29,103 +23,67 @@ local BATTLES = {
     {
         id = 1,
         opening_dialogue = {
-            { speaker = "The Apostle", text = "You seek the masks?{{pause=500}}\nYou'll have to prove yourself first." },
+            { speaker = CHARACTERS.TheApostle.name, text = "You seek the masks?{{pause=500}}\nYou'll have to prove yourself first." },
         },
-        enemy = {
-            name = "The Apostle",
-            max_hp = 30,
-            attack_power = 5,
-            sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(32, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
-            death_animation = "spin_fall",
-            attack_animation = "straight",
-            intro_animation = "slide_in_right",
-        },
-        player_attack_animation = "dash",
-        player_intro_animation = "slide_in",
+        enemy = CHARACTERS.TheApostle,
+        mask_reward = "balanced_mask",
         bark_lines = {
             "Is that all you've got?",
             "Pathetic...",
             "I've seen worse.",
         },
         closing_dialogue = {
-            { speaker = "The Apostle", text = "Impressive...{{pause=600}}\nBut this is only the beginning." },
+            { speaker = CHARACTERS.TheApostle.name, text = "Impressive...{{pause=600}}\nBut this is only the beginning." },
         },
+        player_attack_animation = "dash",
+        player_intro_animation = "slide_in",
     },
     -- Battle 2
     {
         id = 2,
         opening_dialogue = {
-            { speaker = "The Rogue", text = "Another one seeking power?{{pause=400}}\nHow dull." },
+            { speaker = CHARACTERS.TheRogue.name, text = "Another one seeking power?{{pause=400}}\nHow dull." },
         },
-        enemy = {
-            name = "The Rogue",
-            max_hp = 40,
-            attack_power = 7,
-            sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(96, 0, 32, 32, AssetManager.assets.sprites.rogues_png),
-            death_animation = "explode",
-            attack_animation = "zigzag",  -- Shadowy, erratic movement
-            intro_animation = "drop_bounce",
-        },
-        player_attack_animation = "spin_tackle",
-        player_intro_animation = "spin_entry",
+        enemy = CHARACTERS.TheRogue,
+        mask_reward = "opportunist_mask",
         bark_lines = {
             "You're stronger than you look.",
             "But not strong enough!",
             "Feel the shadows!",
         },
         closing_dialogue = {
-            { speaker = "The Rogue", text = "You... you actually did it.{{pause=800}}\nTake what you've earned." },
+            { speaker = CHARACTERS.TheRogue.name, text = "You... you actually did it.{{pause=800}}\nTake what you've earned." },
         },
+        player_attack_animation = "spin_tackle",
+        player_intro_animation = "spin_entry",
     },
-
     -- Battle 3
     {
         id = 3,
         opening_dialogue = {
-            { speaker = "Cursed One", text = "You've claimed two masks already.{{pause=500}}\nLet's see if you deserve a third." },
+            { speaker = CHARACTERS.TheCursedOne.name, text = "You've claimed two masks already.{{pause=500}}\nLet's see if you deserve a third." },
         },
-        enemy = {
-            name = "Cursed One",
-            max_hp = 60,
-            attack_power = 10,
-            sprite_image = AssetManager.assets.sprites.monsters_png,
-            sprite_quad = love.graphics.newQuad(64, 128, 32, 32, AssetManager.assets.sprites.monsters_png),
-            death_animation = "slide",
-            attack_animation = "dash",
-            intro_animation = "diagonal_spin",
-        },
+        enemy = CHARACTERS.TheCursedOne,
         player_attack_animation = "zigzag",
         player_intro_animation = "pop_in",
+        mask_reward = "cursed_mask",
         bark_lines = {
             "The weight of power crushes the weak!",
             "Do you feel it yet?",
             "Your strength... impressive.",
         },
         closing_dialogue = {
-            { speaker = "Cursed One", text = "You've proven yourself.{{pause=600}}\nThe third mask is yours." },
+            { speaker = CHARACTERS.TheCursedOne.name, text = "You've proven yourself.{{pause=600}}\nThe third mask is yours." },
         },
     },
-
     -- Battle 4
     {
         id = 4,
         opening_dialogue = {
             { speaker = "The Guardian", text = "Three masks...{{pause=700}}\nBut can you handle the burden of four?" },
         },
-        enemy = {
-            name = "The Guardian",
-            max_hp = 50,
-            attack_power = 8,
-            sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(128, 32, 32, 32, AssetManager.assets.sprites.rogues_png),
-            death_animation = "fade",
-            attack_animation = "arc_tackle",  -- Graceful, controlled arc
-            intro_animation = "spin_entry",
-        },
-        player_attack_animation = "arc_tackle",
-        player_intro_animation = "drop_bounce",
+        enemy = CHARACTERS.TheGuardian,
+        mask_reward = "guardian_mask",
         bark_lines = {
             "The masks test your worth!",
             "Are you truly worthy?",
@@ -134,48 +92,29 @@ local BATTLES = {
         closing_dialogue = {
             { speaker = "The Guardian", text = "Four masks...{{pause=500}}\nOne remains.{{pause=800}}\nBut the final trial will test everything." },
         },
+        player_attack_animation = "arc_tackle",
+        player_intro_animation = "drop_bounce",
     },
-
     -- Battle 5
     {
         id = 5,
         opening_dialogue = {
-            { speaker = "The Usurper", text = "So you've made it this far.{{pause=800}}\nI was the one who took them from you.{{pause=600}}\nAnd now...{{pause=400}} you want them back?" },
+            { speaker = CHARACTERS.TheUsurper.name, text = "So you've made it this far.{{pause=800}}\nI was the one who took them from you.{{pause=600}}\nAnd now...{{pause=400}} you want them back?" },
         },
-        enemy = {
-            name = "The Usurper",
-            max_hp = 80,
-            attack_power = 12,
-            sprite_image = AssetManager.assets.sprites.rogues_png,
-            sprite_quad = love.graphics.newQuad(160, 64, 32, 32, AssetManager.assets.sprites.rogues_png),
-            death_animation = {  -- Epic boss death with overrides
-                preset = "spin_fall",
-                overrides = {
-                    rotation_speed = math.pi * 10,  -- 5 spins!
-                    fall_distance = 300,            -- Falls further
-                    duration = 2.5,                 -- Longer, more dramatic
-                }
-            },
-            attack_animation = "spin_tackle",  -- Aggressive spinning attack
-            intro_animation = {  -- Dramatic boss entrance
-                preset = "pop_in",
-                overrides = {
-                    duration = 1.2,  -- Slower, more menacing
-                }
-            },
-        },
-        player_attack_animation = {  -- Epic final battle player attack
+        enemy = CHARACTERS.TheUsurper,
+        player_attack_animation = {
             preset = "dash",
             overrides = {
-                duration = 0.5,  -- Slightly longer for dramatic effect
+                duration = 0.5,
             }
         },
-        player_intro_animation = {  -- Determined entrance for final battle
+        player_intro_animation = {
             preset = "slide_in",
             overrides = {
-                duration = 0.8,  -- Slightly slower, more serious
+                duration = 0.8,
             }
         },
+        mask_reward = "usurper_mask",
         bark_lines = {
             "I know all your moves!",
             "We were allies once!",
@@ -183,7 +122,7 @@ local BATTLES = {
             "You can't win!",
         },
         closing_dialogue = {
-            { speaker = "The Usurper", text = "I... I understand now.{{pause=1000}}\nThe masks chose you for a reason.{{pause=800}}\nTake them... and rule wisely." },
+            { speaker = CHARACTERS.TheUsurper.name, text = "I... I understand now.{{pause=1000}}\nThe masks chose you for a reason.{{pause=800}}\nTake them... and rule wisely." },
         },
     },
 }

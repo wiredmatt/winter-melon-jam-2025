@@ -155,7 +155,6 @@ Node.Update = function (self, dt)
     end
 end
 
----Get local bounds (AABB)
 ---@return number x, number y, number width, number height
 Node.GetLocalBounds = function (self)
     return 0, 0, self.width, self.height
@@ -163,22 +162,18 @@ end
 
 ---@param wx number World X coordinate
 ---@param wy number World Y coordinate
----@return number lx, number ly Local coordinates
+---@return number lx, number ly
 Node.WorldToLocal = function (self, wx, wy)
-    -- Get world transform
     local world_x, world_y, world_r, world_sx, world_sy = self:GetWorldTransform()
 
-    -- Translate to origin
     local tx = wx - world_x
     local ty = wy - world_y
 
-    -- Inverse rotate
     local cos_r = math.cos(-world_r)
     local sin_r = math.sin(-world_r)
     local rx = tx * cos_r - ty * sin_r
     local ry = tx * sin_r + ty * cos_r
 
-    -- Inverse scale
     local lx = rx / world_sx
     local ly = ry / world_sy
 
@@ -195,18 +190,15 @@ Node.ContainsPoint = function (self, wx, wy)
 
     local lx, ly = self:WorldToLocal(wx, wy)
 
-    -- Check bounds
     local bx, by, bw, bh = self:GetLocalBounds()
     return lx >= bx and lx <= bx + bw and ly >= by and ly <= by + bh
 end
 
 Node.Destroy = function (self)
-    -- Remove from parent
     if self.parent then
         self.parent:RemoveChild(self)
     end
 
-    -- Destroy all children
     for i = #self.children, 1, -1 do
         self.children[i]:Destroy()
     end
@@ -218,15 +210,13 @@ end
 ---@param y number Mouse Y coordinate
 ---@param dx number Mouse delta X
 ---@param dy number Mouse delta Y
----@return boolean consumed True if event was handled
+---@return boolean consumed
 Node.HandleMouseMoved = function (self, x, y, dx, dy)
     local was_hovered = self.hovered
     local is_hovered = self:ContainsPoint(x, y)
 
-    -- Update hover state
     self.hovered = is_hovered
 
-    -- Trigger callbacks on state change
     if is_hovered and not was_hovered then
         if self.OnHover then
             self.OnHover()
@@ -237,7 +227,6 @@ Node.HandleMouseMoved = function (self, x, y, dx, dy)
         end
     end
 
-    -- Propagate to children
     for _, child in ipairs(self.children) do
         if child.HandleMouseMoved then
             if child:HandleMouseMoved(x, y, dx, dy) then
@@ -246,15 +235,14 @@ Node.HandleMouseMoved = function (self, x, y, dx, dy)
         end
     end
 
-    return is_hovered  -- Consume if hovered
+    return is_hovered
 end
 
 ---@param x number Mouse X coordinate
 ---@param y number Mouse Y coordinate
 ---@param button number Mouse button (1 = left, 2 = right, 3 = middle)
----@return boolean consumed True if event was handled
+---@return boolean consumed
 Node.HandleMousePressed = function (self, x, y, button)
-    -- Propagate to children
     for _, child in ipairs(self.children) do
         if child.HandleMousePressed then
             if child:HandleMousePressed(x, y, button) then
@@ -263,16 +251,14 @@ Node.HandleMousePressed = function (self, x, y, button)
         end
     end
 
-    -- Check if within bounds
     return self:ContainsPoint(x, y)
 end
 
 ---@param x number Mouse X coordinate
 ---@param y number Mouse Y coordinate
 ---@param button number Mouse button (1 = left, 2 = right, 3 = middle)
----@return boolean consumed True if event was handled
+---@return boolean consumed
 Node.HandleMouseReleased = function (self, x, y, button)
-    -- Propagate to children
     for _, child in ipairs(self.children) do
         if child.HandleMouseReleased then
             if child:HandleMouseReleased(x, y, button) then
@@ -314,7 +300,6 @@ Node.GetFocusableDescendants = function (self)
     return focusables
 end
 
----Get the currently focused descendant
 ---@return Node?
 Node.GetFocused = function (self)
     if self.focused then
@@ -333,7 +318,6 @@ Node.GetFocused = function (self)
     return nil
 end
 
----Clear focus from all descendants
 Node.ClearFocus = function (self)
     if self.focused then
         self.focused = false
@@ -349,13 +333,10 @@ Node.ClearFocus = function (self)
     end
 end
 
----Set focus to a specific node
 ---@param node Node?
 Node.SetFocused = function (self, node)
-    -- Clear existing focus
     self:ClearFocus()
 
-    -- Set new focus
     if node then
         node.focused = true
         if node.OnFocus then
@@ -364,7 +345,6 @@ Node.SetFocused = function (self, node)
     end
 end
 
----Navigate focus in a direction using spatial algorithm
 ---@param dx number Direction X (-1 for left, 1 for right, 0 for vertical only)
 ---@param dy number Direction Y (-1 for up, 1 for down, 0 for horizontal only)
 ---@return boolean success True if focus changed
@@ -372,7 +352,6 @@ Node.FocusDirection = function (self, dx, dy)
     local current = self:GetFocused()
     local focusables = self:GetFocusableDescendants()
 
-    -- If nothing is focused, focus the first element
     if not current then
         if #focusables > 0 then
             self:SetFocused(focusables[1])
@@ -381,16 +360,13 @@ Node.FocusDirection = function (self, dx, dy)
         return false
     end
 
-    -- Get current center
     local cx, cy = current:GetWorldCenter()
 
-    -- Normalize direction vector
     local dir_length = math.sqrt(dx * dx + dy * dy)
     if dir_length == 0 then return false end
     dx = dx / dir_length
     dy = dy / dir_length
 
-    -- Find best candidate
     local best_candidate = nil
     local best_score = -math.huge
     local best_distance = math.huge
@@ -399,21 +375,16 @@ Node.FocusDirection = function (self, dx, dy)
         if candidate ~= current then
             local nx, ny = candidate:GetWorldCenter()
 
-            -- Vector from current to candidate
             local delta_x = nx - cx
             local delta_y = ny - cy
 
-            -- Dot product: how aligned with direction?
             local alignment = delta_x * dx + delta_y * dy
 
-            -- Only consider candidates in front of us
             if alignment > 0 then
                 local distance = math.sqrt(delta_x * delta_x + delta_y * delta_y)
 
-                -- Score: prioritize alignment, penalize distance
                 local score = alignment / distance
 
-                -- Pick best score, or if tied, pick closer element
                 if score > best_score or (math.abs(score - best_score) < 0.001 and distance < best_distance) then
                     best_score = score
                     best_distance = distance
@@ -423,7 +394,6 @@ Node.FocusDirection = function (self, dx, dy)
         end
     end
 
-    -- Set focus to best candidate
     if best_candidate then
         self:SetFocused(best_candidate)
         return true
@@ -432,7 +402,6 @@ Node.FocusDirection = function (self, dx, dy)
     return false
 end
 
----Activate the currently focused element (trigger its action)
 ---@return boolean success True if an action was triggered
 Node.ActivateFocused = function (self)
     local focused = self:GetFocused()

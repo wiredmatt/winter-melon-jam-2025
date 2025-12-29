@@ -20,8 +20,10 @@
 ---@field timer number
 ---@field duration number
 ---@field active boolean
----@field sprite_data table?
+---@field sprite Sprite The sprite node to animate
 ---@field preset DeathAnimationPreset
+---@field start_center_x number Initial center X position
+---@field start_center_y number Initial center Y position
 local DeathAnimation = {}
 DeathAnimation.__index = DeathAnimation
 
@@ -110,8 +112,10 @@ DeathAnimation.New = function()
     self.timer = 0
     self.duration = 0
     self.active = false
-    self.sprite_data = nil
-    self.preset = PRESETS.spin_fall  -- Default preset
+    self.sprite = nil
+    self.preset = PRESETS.spin_fall
+    self.start_center_x = 0
+    self.start_center_y = 0
     return self
 end
 
@@ -144,20 +148,25 @@ DeathAnimation._loadConfig = function(self, config)
     return table_copy(PRESETS.spin_fall)  -- Default fallback
 end
 
----@param sprite_data table {image, quad, x, y, sprite_w, sprite_h}
+---@param sprite Sprite The sprite node to animate
 ---@param animation_config string|table? Animation configuration
-DeathAnimation.Start = function(self, sprite_data, animation_config)
-    self.sprite_data = sprite_data
+DeathAnimation.Start = function(self, sprite, animation_config)
+    self.sprite = sprite
     self.preset = self:_loadConfig(animation_config or "spin_fall")
     self.duration = self.preset.duration
     self.timer = self.duration
     self.active = true
+
+    -- Store starting center position
+    local sprite_w, sprite_h = sprite.width, sprite.height
+    self.start_center_x = sprite.x + (sprite_w / 2)
+    self.start_center_y = sprite.y + (sprite_h / 2)
 end
 
 ---@param dt number
 ---@return boolean still_animating
 DeathAnimation.Update = function(self, dt)
-    if not self.active then
+    if not self.active or not self.sprite then
         return false
     end
 
@@ -165,54 +174,50 @@ DeathAnimation.Update = function(self, dt)
     if self.timer <= 0 then
         self.timer = 0
         self.active = false
+        self.sprite.color[4] = 0  -- Fully transparent
         return false
     end
 
+    self:ApplyToSprite()
     return true
 end
 
-DeathAnimation.Draw = function(self)
-    local data = self.sprite_data
-
-    if not self.active or not data then
+---Apply animation transforms to sprite
+DeathAnimation.ApplyToSprite = function(self)
+    if not self.active or not self.sprite then
         return
     end
 
-    local progress = 1 - (self.timer / self.duration)  -- 0 to 1
+    local progress = 1 - (self.timer / self.duration)
     local preset = self.preset
 
-    -- Calculate transforms using preset curves
+    -- Calculate transforms
     local rotation = progress * preset.rotation_speed
     local fall = progress * preset.fall_distance
     local scale = preset.scale_curve(progress)
     local alpha = preset.alpha_curve(progress)
 
-    -- Custom translation override
-    local x, y = data.x, data.y + fall
+    -- Calculate center position
+    local center_x, center_y = self.start_center_x, self.start_center_y + fall
     if preset.translation_func then
-        x, y = preset.translation_func(progress, data)
+        -- Create temporary data for translation_func
+        local temp_data = {
+            x = self.start_center_x,
+            y = self.start_center_y
+        }
+        center_x, center_y = preset.translation_func(progress, temp_data)
     end
 
-    local pr, pg, pb, pa = love.graphics.getColor()
+    -- Convert to top-left position
+    local sprite_w, sprite_h = self.sprite.width, self.sprite.height
+    self.sprite.x = center_x - (sprite_w / 2)
+    self.sprite.y = center_y - (sprite_h / 2)
 
-    love.graphics.push()
-
-    -- move to sprite center for rotation
-    love.graphics.translate(x, y)
-    love.graphics.rotate(rotation)
-    love.graphics.scale(scale, scale)
-
-    love.graphics.setColor(1, 1, 1, alpha)
-
-    -- draw sprite centered
-    if data.quad then
-        love.graphics.draw(data.image, data.quad, -data.sprite_w / 2, -data.sprite_h / 2)
-    else
-        love.graphics.draw(data.image, -data.sprite_w / 2, -data.sprite_h / 2)
-    end
-
-    love.graphics.pop()
-    love.graphics.setColor(pr, pg, pb, pa)
+    -- Apply transforms
+    self.sprite.r = rotation
+    self.sprite.sx = scale
+    self.sprite.sy = scale
+    self.sprite.color[4] = alpha
 end
 
 ---@return boolean

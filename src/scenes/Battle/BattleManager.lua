@@ -6,7 +6,7 @@ local BattleManager = {
     current_battle_index = 1,
 }
 
----@return BattleConfig?
+---@return BattleConfig
 BattleManager.GetCurrentBattle = function()
     return BATTLES[BattleManager.current_battle_index]
 end

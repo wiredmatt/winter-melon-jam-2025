@@ -14,11 +14,11 @@
 ---@field timer number
 ---@field duration number
 ---@field active boolean
----@field sprite_data table?
----@field target_x number
----@field target_y number
----@field start_x number
----@field start_y number
+---@field sprite Sprite The sprite node to animate
+---@field target_center_x number Target center X position
+---@field target_center_y number Target center Y position
+---@field start_center_x number Start center X position
+---@field start_center_y number Start center Y position
 ---@field max_distance number
 ---@field preset AttackAnimationPreset
 local AttackAnimation = {}
@@ -151,11 +151,11 @@ AttackAnimation.New = function()
     self.timer = 0
     self.duration = 0
     self.active = false
-    self.sprite_data = nil
-    self.target_x = 0
-    self.target_y = 0
-    self.start_x = 0
-    self.start_y = 0
+    self.sprite = nil
+    self.target_center_x = 0
+    self.target_center_y = 0
+    self.start_center_x = 0
+    self.start_center_y = 0
     self.max_distance = 0
     self.preset = PRESETS.straight
     return self
@@ -188,20 +188,24 @@ AttackAnimation._loadConfig = function(self, config)
     return table_copy(PRESETS.straight)
 end
 
----@param sprite_data table {image, quad, x, y, sprite_w, sprite_h}
----@param target_x number Target X position
----@param target_y number Target Y position
+---@param sprite Sprite The sprite node to animate
+---@param target_center_x number Target center X position
+---@param target_center_y number Target center Y position
 ---@param animation_config string|table? Animation configuration
-AttackAnimation.Start = function(self, sprite_data, target_x, target_y, animation_config)
-    self.sprite_data = sprite_data
-    self.start_x = sprite_data.x
-    self.start_y = sprite_data.y
-    self.target_x = target_x
-    self.target_y = target_y
+AttackAnimation.Start = function(self, sprite, target_center_x, target_center_y, animation_config)
+    self.sprite = sprite
 
-    local dx = target_x - sprite_data.x
-    local dy = target_y - sprite_data.y
-    self.max_distance = math.sqrt(dx * dx + dy * dy) * 0.7  -- Go 70% of the way
+    -- Get current center position from sprite
+    local sprite_w, sprite_h = sprite.width, sprite.height
+    self.start_center_x = sprite.x + (sprite_w / 2)
+    self.start_center_y = sprite.y + (sprite_h / 2)
+
+    self.target_center_x = target_center_x
+    self.target_center_y = target_center_y
+
+    local dx = target_center_x - self.start_center_x
+    local dy = target_center_y - self.start_center_y
+    self.max_distance = math.sqrt(dx * dx + dy * dy) * 0.7
 
     self.preset = self:_loadConfig(animation_config or "straight")
     self.duration = self.preset.duration
@@ -220,26 +224,28 @@ AttackAnimation.Update = function(self, dt)
     if self.timer >= self.duration then
         self.timer = self.duration
         self.active = false
+        self:ApplyToSprite()  -- Apply final state
         return false
     end
 
+    self:ApplyToSprite()  -- Apply current state
     return true
 end
 
-AttackAnimation.Draw = function(self)
-    local data = self.sprite_data
-    if not self.active or not data then
+---Apply animation transforms to sprite
+AttackAnimation.ApplyToSprite = function(self)
+    if not self.active or not self.sprite then
         return
     end
 
     local progress = self.timer / self.duration
     local preset = self.preset
 
-    -- determine if we're approaching (first half) or returning (second half)
+    -- Determine phase
     local is_approach = progress < 0.5
     local phase_progress = is_approach and (progress * 2) or ((progress - 0.5) * 2)
 
-    -- calculate distance based on phase
+    -- Calculate distance ratio
     local distance_ratio
     if is_approach then
         distance_ratio = preset.approach_curve(phase_progress)
@@ -247,55 +253,46 @@ AttackAnimation.Draw = function(self)
         distance_ratio = preset.return_curve(phase_progress)
     end
 
-    -- calculate position
-    local dx = self.target_x - self.start_x
-    local dy = self.target_y - self.start_y
+    -- Calculate center position
+    local dx = self.target_center_x - self.start_center_x
+    local dy = self.target_center_y - self.start_center_y
     local magnitude = math.sqrt(dx * dx + dy * dy)
 
     local traveled_distance = self.max_distance * distance_ratio
-    local x, y
+    local center_x, center_y
 
     if preset.path_func then
-        -- custom path
         local path_progress = is_approach and phase_progress or (1 - phase_progress)
-        x, y = preset.path_func(path_progress, self.start_x, self.start_y, self.target_x, self.target_y)
-
-        -- scale by distance ratio
-        x = self.start_x + (x - self.start_x) * distance_ratio
-        y = self.start_y + (y - self.start_y) * distance_ratio
+        center_x, center_y = preset.path_func(path_progress, self.start_center_x, self.start_center_y,
+                                               self.target_center_x, self.target_center_y)
+        center_x = self.start_center_x + (center_x - self.start_center_x) * distance_ratio
+        center_y = self.start_center_y + (center_y - self.start_center_y) * distance_ratio
     else
-        -- straight path
-        x = self.start_x + (dx / magnitude) * traveled_distance
-        y = self.start_y + (dy / magnitude) * traveled_distance
+        center_x = self.start_center_x + (dx / magnitude) * traveled_distance
+        center_y = self.start_center_y + (dy / magnitude) * traveled_distance
     end
 
-    local rotation = 0
+    -- Convert to top-left position
+    local sprite_w, sprite_h = self.sprite.width, self.sprite.height
+    self.sprite.x = center_x - (sprite_w / 2)
+    self.sprite.y = center_y - (sprite_h / 2)
+
+    -- Apply rotation
     if preset.rotation_speed then
-        rotation = progress * preset.rotation_speed
-    end
-
-    local scale = 1
-    if preset.scale_curve then
-        scale = preset.scale_curve(progress)
-    end
-
-    local pr, pg, pb, pa = love.graphics.getColor()
-
-    love.graphics.push()
-
-    love.graphics.translate(x, y)
-    love.graphics.rotate(rotation)
-    love.graphics.scale(scale, scale)
-
-    love.graphics.setColor(1, 1, 1, 1)
-    if data.quad then
-        love.graphics.draw(data.image, data.quad, -data.sprite_w / 2, -data.sprite_h / 2)
+        self.sprite.r = progress * preset.rotation_speed
     else
-        love.graphics.draw(data.image, -data.sprite_w / 2, -data.sprite_h / 2)
+        self.sprite.r = 0
     end
 
-    love.graphics.pop()
-    love.graphics.setColor(pr, pg, pb, pa)
+    -- Apply scale
+    if preset.scale_curve then
+        local scale = preset.scale_curve(progress)
+        self.sprite.sx = scale
+        self.sprite.sy = scale
+    else
+        self.sprite.sx = 1
+        self.sprite.sy = 1
+    end
 end
 
 ---@return boolean

@@ -1,10 +1,10 @@
 ---@class BattleSceneConfig
 local BattleSceneConfig = {
     LAYOUT = {
-        ENEMY_POS = {x = 0.7, y = 0.4},
+        ENEMY_POS = {x = 0.7, y = 0.45},
         ENEMY_BARK_Y_OFFSET = 0.3, -- for bark text above enemy
-        PLAYER_POS = {x = 0.25, y = 0.55},
-        TITLE_OFFSET = {x = -100, y = 20},
+        PLAYER_POS = {x = 0.25, y = 0.45},
+        TITLE_OFFSET = {x = -100, y = 5},
         HP_LABEL_Y = -140,
         ACTION_PROMPT_Y = -18,
     },
@@ -16,6 +16,13 @@ local BattleSceneConfig = {
         BATTLE_TITLE = {1, 1, 0.5, 1},
         CONTINUE_PROMPT = {0.7, 0.7, 0.7, 0},
         ACTION_PROMPT = {0.8, 0.8, 0.8, 1},
+        BUTTON_NORMAL = {0.3, 0.3, 0.3, 1},
+        BUTTON_SELECTED_BORDER = {1, 1, 1, 1},
+        BUTTON_NORMAL_BORDER = {0.5, 0.5, 0.5, 1},
+        BUTTON_DISABLED = {0.2, 0.2, 0.2, 0.5},
+        MASK_NAME = {1, 1, 0.5, 1},
+        SKILL_READY = {0.5, 1, 0.5, 1},
+        SKILL_COOLDOWN = {1, 0.5, 0.5, 1},
     },
 
     -- in seconds

@@ -90,15 +90,35 @@ end
 ---@return number icon_x, number icon_y, number text_x, number text_y
 Button.CalculateLayout = function (self)
     local icon_w, icon_h = self:GetIconSize()
-    local text_w = self.text ~= "" and self.font:getWidth(self.text) or 0
-    local text_h = self.font:getHeight()
+
+    -- Calculate text dimensions (accounting for multi-line text)
+    local text_w = 0
+    local text_h = 0
+    if self.text ~= "" then
+        -- Find the widest line for horizontal centering
+        for line in self.text:gmatch("[^\n]+") do
+            local line_w = self.font:getWidth(line)
+            if line_w > text_w then
+                text_w = line_w
+            end
+        end
+        -- Calculate total height based on line count
+        local line_count = select(2, self.text:gsub("\n", "\n")) + 1
+        text_h = self.font:getHeight() * line_count
+    end
 
     local spacing = (icon_w > 0 and text_w > 0) and self.icon_spacing or 0
+
+    -- Account for border width when centering (border is drawn centered on edge)
+    -- For a border of width N, we lose N/2 pixels on each side visually
+    local border_offset = (not self.nineslice and self.border_width > 0) and (self.border_width / 2) or 0
+    local inner_width = self.width - (border_offset * 2)
+    local inner_height = self.height - (border_offset * 2)
 
     if self.icon_position == "left" or self.icon_position == "right" then
         -- Horizontal layout
         local total_w = icon_w + spacing + text_w
-        local content_x = (self.width - total_w) / 2
+        local content_x = border_offset + (inner_width - total_w) / 2
 
         local icon_x, text_x
         if self.icon_position == "left" then
@@ -109,15 +129,15 @@ Button.CalculateLayout = function (self)
             icon_x = content_x + text_w + spacing
         end
 
-        local icon_y = (self.height - icon_h) / 2
-        local text_y = (self.height - text_h) / 2
+        local icon_y = border_offset + (inner_height - icon_h) / 2
+        local text_y = border_offset + (inner_height - text_h) / 2
 
         return icon_x, icon_y, text_x, text_y
 
     else  -- top or bottom
         -- Vertical layout
         local total_h = icon_h + spacing + text_h
-        local content_y = (self.height - total_h) / 2
+        local content_y = border_offset + (inner_height - total_h) / 2
 
         local icon_y, text_y
         if self.icon_position == "top" then
@@ -128,8 +148,8 @@ Button.CalculateLayout = function (self)
             icon_y = content_y + text_h + spacing
         end
 
-        local icon_x = (self.width - icon_w) / 2
-        local text_x = (self.width - text_w) / 2
+        local icon_x = border_offset + (inner_width - icon_w) / 2
+        local text_x = border_offset + (inner_width - text_w) / 2
 
         return icon_x, icon_y, text_x, text_y
     end

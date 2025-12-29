@@ -80,6 +80,9 @@ Sprite.Draw = function (self)
         else
             love.graphics.draw(self.image, 0, 0)
         end
+    else
+        love.graphics.setColor(self.color)
+        love.graphics.rectangle("fill", 0, 0, self.width, self.height)
     end
 
     love.graphics.setColor(pr, pg, pb, pa)

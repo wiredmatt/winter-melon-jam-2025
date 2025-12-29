@@ -8,6 +8,8 @@ local AttackAnimation = require("src.scenes.Battle.AttackAnimation")
 local IntroAnimation = require("src.scenes.Battle.IntroAnimation")
 local FloatingText = require("src.scenes.Battle.FloatingText")
 local ScreenShake = require("src.scenes.Battle.ScreenShake")
+local MaskSwapUI = require("src.scenes.Battle.MaskSwapUI")
+local MaskManager = require("src.scenes.Battle.MaskManager")
 
 ---@class BattleScene : Scene
 ---@field state string current battle state
@@ -24,13 +26,17 @@ local ScreenShake = require("src.scenes.Battle.ScreenShake")
 ---@field enemy_intro_anim IntroAnimation
 ---@field floating_text FloatingText
 ---@field screen_shake ScreenShake
+---@field mask_swap_ui MaskSwapUI
+---@field swap_menu_open boolean
 ---@field pending_enemy_attack boolean
+---@field player_using_skill boolean
 ---@field transitioning boolean
 local BattleScene = {
     name = "Battle",
     transition_in = SceneManager.Transitions.FadeIn.New(),
     transition_out = SceneManager.Transitions.FadeOut.New(),
     inputmap = require("src.scenes.Battle.inputmap"),
+    initialized = false,
     transitioning = false
 }
 
@@ -43,20 +49,25 @@ local STATE = {
 }
 
 BattleScene.Enter = function (self)
-    InputManager.DefineMap(self.name)
-    InputManager.LoadBindings(self.name, self.inputmap.bindings)
-    InputManager.SetActiveMap(self.name)
+    if not self.initialized then
+        InputManager.DefineMap(self.name)
+        InputManager.LoadBindings(self.name, self.inputmap.bindings)
+        InputManager.SetActiveMap(self.name)
+        MaskManager.Init()
+        self.initialized = true
+    end
+
+    self.root_node = UI.Node.New()
 
     local tiny5_16px_font = AssetManager.assets.fonts.Tiny5_ttf[16]
     tiny5_16px_font:setFilter("nearest", "nearest")
+    local tiny5_8px_font = AssetManager.assets.fonts.Tiny5_ttf[8]
+    tiny5_8px_font:setFilter("nearest", "nearest")
 
     self.battle_config = BattleManager.GetCurrentBattle()
-    if not self.battle_config then
-        print("[BattleScene] ERROR: No battle config found!")
-        return
-    end
+    if not self.battle_config then error("No battle config found") end
 
-    print("[BattleScene] Starting battle " .. self.battle_config.id .. ": " .. self.battle_config.enemy.name)
+    MaskManager.ResetCooldowns()
 
     self.state = STATE.OPENING_DIALOGUE
     self.dialogue_index = 1
@@ -82,7 +93,32 @@ BattleScene.Enter = function (self)
     self.player_intro_anim = IntroAnimation.New()
     self.enemy_intro_anim = IntroAnimation.New()
     self.pending_enemy_attack = false
+    self.player_using_skill = false
     self.transitioning = false
+
+    self.mask_swap_ui = MaskSwapUI.New({
+        screen_width = screen_w,
+        screen_height = screen_h,
+        title_font = tiny5_16px_font,
+        body_font = tiny5_8px_font,
+        inputmap = self.inputmap,
+        on_mask_selected = function(mask_id)
+            self:OnMaskSwapped(mask_id)
+        end,
+        on_close = function()
+            self.swap_menu_open = false
+            self.root_node:RemoveChild(self.mask_swap_ui.root_node)
+
+            if self.battle_ui and self.battle_ui.root_node then
+                self.battle_ui.root_node.enabled = true
+                local focusables = self.battle_ui.root_node:GetFocusableDescendants()
+                if #focusables > 0 then
+                    self.battle_ui.root_node:SetFocused(focusables[1])
+                end
+            end
+        end
+    })
+    self.swap_menu_open = false
 
     -- setup combat with callbacks
     self.combat = Combat.New({
@@ -103,15 +139,19 @@ BattleScene.Enter = function (self)
         end,
 
         on_enemy_defeat = function()
-            local sprite_data = self.battle_ui:GetEnemySpriteData()
             local death_config = self.battle_config.enemy.death_animation or "spin_fall"
 
-            self.death_anim:Start(sprite_data, death_config)
+            self.death_anim:Start(self.battle_ui.enemy_sprite, death_config)
             self.screen_shake:Start(
                 BattleSceneConfig.SCREEN_SHAKE.DEATH_DURATION,
                 BattleSceneConfig.SCREEN_SHAKE.DEATH_INTENSITY
             )
-            self.battle_ui:HideEnemySprite()
+
+            -- collect enemy's mask
+            local mask_reward = self.battle_config.mask_reward
+            if mask_reward and not MaskManager.HasMask(mask_reward) then
+                MaskManager.CollectMask(mask_reward)
+            end
         end,
 
         on_enemy_bark = function(text)
@@ -124,16 +164,30 @@ BattleScene.Enter = function (self)
             -- defeat handled by combat timer
             -- could be used for something else anyway so leaving it
         end,
+
+        on_skill_used = function(skill_name)
+            -- visual feedback for skill usage
+            local x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
+            local y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+            self.floating_text:Spawn(skill_name .. "!", x, y, BattleSceneConfig.FLOATING_TEXT.BARK_COLOR)
+        end,
+
+        on_passive_triggered = function(passive_name, amount)
+            -- visual feedback for passive effects
+            if passive_name == "Thorns" or passive_name == "Lifesteal" then
+                local x = CONFIG.virtual_cfg.width * BattleSceneConfig.LAYOUT.PLAYER_POS.x
+                local y = CONFIG.virtual_cfg.height * BattleSceneConfig.LAYOUT.ENEMY_BARK_Y_OFFSET
+                local text = passive_name .. " " .. amount
+                self.floating_text:Spawn(text, x, y, BattleSceneConfig.FLOATING_TEXT.BARK_COLOR)
+            end
+        end,
     })
 
     self.dialogue_ui:ShowDialogue(self.battle_config.opening_dialogue[1])
 end
 
 BattleScene.AdvanceDialogue = function (self)
-    -- Prevent advancing dialogue multiple times during scene transition
-    if self.transitioning then
-        return
-    end
+    if self.transitioning then return end
 
     local dialogues = self.state == STATE.OPENING_DIALOGUE
         and self.battle_config.opening_dialogue
@@ -142,13 +196,11 @@ BattleScene.AdvanceDialogue = function (self)
     self.dialogue_index = self.dialogue_index + 1
 
     if self.dialogue_index > #dialogues then
-        -- dialogue complete, transition to next state
         if self.state == STATE.OPENING_DIALOGUE then
             self.state = STATE.BATTLE
             self:SetupBattleUI()
         elseif self.state == STATE.CLOSING_DIALOGUE then
-            -- battle complete, move to next battle or end
-            self.transitioning = true  -- Prevent multiple calls
+            self.transitioning = true
             if BattleManager.HasNextBattle() then
                 BattleManager.NextBattle()
                 SceneManager.SwitchTo(Scenes.Battle)
@@ -176,42 +228,107 @@ BattleScene.SetupBattleUI = function (self)
         player_max_hp = player_max_hp,
         enemy_hp = enemy_hp,
         enemy_max_hp = enemy_max_hp,
+        on_action_selected = function(action)
+            self:OnActionButtonClicked(action)
+        end,
     })
 
-    -- Start intro animations
-    local player_sprite_data = self.battle_ui:GetPlayerSpriteData()
-    local player_x, player_y = self.battle_ui:GetPlayerSpritePosition()
-    local player_intro_config = self.battle_config.player_intro_animation or "slide_in"
-    self.player_intro_anim:Start(player_sprite_data, player_x, player_y, player_intro_config)
-    self.battle_ui:HidePlayerSprite()
+    self.root_node:AddChild(self.battle_ui.root_node)
 
-    local enemy_sprite_data = self.battle_ui:GetEnemySpriteData()
-    local enemy_x, enemy_y = self.battle_ui:GetEnemySpritePosition()
+    -- Setup intro animations
+    local player_intro_config = self.battle_config.player_intro_animation or "slide_in"
+    self.player_intro_anim:Start(
+        self.battle_ui.player_sprite,
+        self.battle_ui.player_home_center_x,
+        self.battle_ui.player_home_center_y,
+        player_intro_config
+    )
+
     local enemy_intro_config = self.battle_config.enemy.intro_animation or "slide_in_right"
-    self.enemy_intro_anim:Start(enemy_sprite_data, enemy_x, enemy_y, enemy_intro_config)
-    self.battle_ui:HideEnemySprite()
+    self.enemy_intro_anim:Start(
+        self.battle_ui.enemy_sprite,
+        self.battle_ui.enemy_home_center_x,
+        self.battle_ui.enemy_home_center_y,
+        enemy_intro_config
+    )
 end
 
 BattleScene.TriggerPlayerAttack = function (self)
-    local player_sprite_data = self.battle_ui:GetPlayerSpriteData()
     local target_x, target_y = self.battle_ui:GetEnemySpritePosition()
-
     local player_anim_config = self.battle_config.player_attack_animation or "straight"
-    self.player_attack_anim:Start(player_sprite_data, target_x, target_y, player_anim_config)
-    self.battle_ui:HidePlayerSprite()
+
+    self.player_attack_anim:Start(
+        self.battle_ui.player_sprite,
+        target_x,
+        target_y,
+        player_anim_config
+    )
 end
 
 BattleScene.TriggerEnemyAttack = function (self)
-    local enemy_sprite_data = self.battle_ui:GetEnemySpriteData()
     local target_x, target_y = self.battle_ui:GetPlayerSpritePosition()
-
     local enemy_anim_config = self.battle_config.enemy.attack_animation or "straight"
-    self.enemy_attack_anim:Start(enemy_sprite_data, target_x, target_y, enemy_anim_config)
-    self.battle_ui:HideEnemySprite()
+
+    self.enemy_attack_anim:Start(
+        self.battle_ui.enemy_sprite,
+        target_x,
+        target_y,
+        enemy_anim_config
+    )
+end
+
+BattleScene.TriggerPlayerSkill = function (self)
+    local target_x, target_y = self.battle_ui:GetEnemySpritePosition()
+    local player_anim_config = self.battle_config.player_attack_animation or "straight"
+
+    self.player_attack_anim:Start(
+        self.battle_ui.player_sprite,
+        target_x,
+        target_y,
+        player_anim_config
+    )
+    self.player_using_skill = true
+end
+
+BattleScene.OpenMaskSwapMenu = function (self)
+    local collected_masks = MaskManager.GetCollectedMasks()
+    local equipped_mask = MaskManager.GetEquippedMask(); if equipped_mask == nil then error() end
+
+    self.mask_swap_ui:Show(collected_masks, equipped_mask.id)
+    self.swap_menu_open = true
+
+    if self.battle_ui and self.battle_ui.root_node then
+        self.battle_ui.root_node.enabled = false
+        self.battle_ui.root_node:ClearFocus()
+    end
+
+    self.root_node:AddChild(self.mask_swap_ui.root_node)
+end
+
+BattleScene.OnMaskSwapped = function (self, mask_id)
+    MaskManager.EquipMask(mask_id)
+
+    local mask = MaskManager.GetEquippedMask(); if mask == nil then error() end
+    local skill_ready = MaskManager.IsSkillReady(mask.active.name)
+    local cooldown = MaskManager.skill_cooldowns[mask.active.name] or 0
+    self.battle_ui:UpdateMaskDisplay(mask.name, skill_ready, cooldown)
+    self.battle_ui:UpdatePlayerMask(mask_id)
+end
+
+BattleScene.OnActionButtonClicked = function (self, action)
+    if action == "attack" and self.combat:IsPlayerTurn() and not self.swap_menu_open then
+        self:TriggerPlayerAttack()
+    elseif action == "skill" and self.combat:IsPlayerTurn() and not self.swap_menu_open then
+        local mask = MaskManager.GetEquippedMask()
+        if mask and MaskManager.IsSkillReady(mask.active.name) then
+            self:TriggerPlayerSkill()
+        end
+    elseif action == "swap" and not self.swap_menu_open then
+        self:OpenMaskSwapMenu()
+    end
 end
 
 BattleScene.HandleInput = function (self)
-    -- handle dialogue states
     if self.state == STATE.OPENING_DIALOGUE or self.state == STATE.CLOSING_DIALOGUE then
         if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
             if self.dialogue_ui:IsWaitingForInput() then
@@ -220,81 +337,94 @@ BattleScene.HandleInput = function (self)
                 self.dialogue_ui:Skip()
             end
         end
-    -- handle battle state
     elseif self.state == STATE.BATTLE then
-        -- block input during intro animations, defeat countdown, death animation, or attack animations
+        if self.swap_menu_open then
+            self.mask_swap_ui:HandleInput()
+            return
+        end
+
         if self.player_intro_anim:IsActive() or self.enemy_intro_anim:IsActive() or
            self.combat:IsDefeated() or self.death_anim:IsActive() or
            self.player_attack_anim:IsActive() or self.enemy_attack_anim:IsActive() then
             return
         end
 
+        local dx, dy = 0, 0
+        local has_input = false
+
+        if InputManager.JustPressed(self.inputmap.actions.NAVIGATE_LEFT) then
+            dx = -1
+            has_input = true
+        elseif InputManager.JustPressed(self.inputmap.actions.NAVIGATE_RIGHT) then
+            dx = 1
+            has_input = true
+        end
+
+        if has_input then
+            self.battle_ui.root_node:FocusDirection(dx, dy)
+        end
+
         if InputManager.JustPressed(self.inputmap.actions.CONFIRM) then
-            if self.combat:IsPlayerTurn() then
-                self:TriggerPlayerAttack()
-            end
+            self.battle_ui.root_node:ActivateFocused()
         end
     end
 end
 
 BattleScene.Update = function (self, dt)
     self:HandleInput()
+
     if self.state == STATE.OPENING_DIALOGUE or self.state == STATE.CLOSING_DIALOGUE then
         self.dialogue_ui:Update(dt)
         return
     end
 
     if self.state == STATE.BATTLE then
-        -- Update intro animations
+        self.root_node:Update(dt)
         if self.player_intro_anim:IsActive() then
             self.player_intro_anim:Update(dt)
             if not self.player_intro_anim:IsActive() then
-                -- Player intro animation complete
-                self.battle_ui:ShowPlayerSprite()
+                self.battle_ui:ResetPlayerSprite()
             end
         end
 
         if self.enemy_intro_anim:IsActive() then
             self.enemy_intro_anim:Update(dt)
             if not self.enemy_intro_anim:IsActive() then
-                -- Enemy intro animation complete
-                self.battle_ui:ShowEnemySprite()
+                self.battle_ui:ResetEnemySprite()
             end
         end
 
-        -- Update attack animations
         if self.player_attack_anim:IsActive() then
             self.player_attack_anim:Update(dt)
             if not self.player_attack_anim:IsActive() then
-                -- Player attack animation complete - deal damage
-                self.battle_ui:ShowPlayerSprite()
-                self.combat:PlayerAttack()
+                self.battle_ui:ResetPlayerSprite()
+                if self.player_using_skill then
+                    self.combat:PlayerExecuteSkill()
+                    self.player_using_skill = false
+                else
+                    self.combat:PlayerAttack()
+                end
             end
         end
 
         if self.enemy_attack_anim:IsActive() then
             self.enemy_attack_anim:Update(dt)
             if not self.enemy_attack_anim:IsActive() then
-                -- Enemy attack animation complete - deal damage and show sprite
-                self.battle_ui:ShowEnemySprite()
+                self.battle_ui:ResetEnemySprite()
                 self.combat:EnemyAttack()
                 self.pending_enemy_attack = false
             end
         end
 
-        -- Update defeat timer
         if self.combat.defeat_timer > 0 then
             self.combat.defeat_timer = self.combat.defeat_timer - dt
         end
 
-        -- Update combat timing, but intercept enemy attacks
         if not self.player_intro_anim:IsActive() and not self.enemy_intro_anim:IsActive() and
            not self.player_attack_anim:IsActive() and not self.enemy_attack_anim:IsActive() then
-            -- Only update combat when no animations are playing
             if self.combat.current_turn == "enemy" and self.combat.player_hp > 0 and self.combat.enemy_hp > 0 then
                 self.combat.bark_timer = self.combat.bark_timer - dt
                 if self.combat.bark_timer <= 0 and not self.pending_enemy_attack then
-                    -- Time for enemy to attack - trigger animation instead
                     self:TriggerEnemyAttack()
                     self.pending_enemy_attack = true
                 end
@@ -309,12 +439,22 @@ BattleScene.Update = function (self, dt)
         if self.death_anim:IsActive() then
             self.death_anim:Update(dt)
             if not self.death_anim:IsActive() then
-                -- Death animation completed, transition to closing dialogue
                 self.state = STATE.CLOSING_DIALOGUE
                 self.dialogue_index = 1
                 self.dialogue_ui:ShowDialogue(self.battle_config.closing_dialogue[1])
                 self.waiting_for_input = false
             end
+        end
+
+        local mask = MaskManager.GetEquippedMask()
+        if mask then
+            local skill_ready = MaskManager.IsSkillReady(mask.active.name)
+            local cooldown = MaskManager.skill_cooldowns[mask.active.name] or 0
+            self.battle_ui:UpdateMaskDisplay(mask.name, skill_ready, cooldown)
+            self.battle_ui:UpdateActionButtons(
+                self.combat:IsPlayerTurn(),
+                skill_ready
+            )
         end
 
         self.screen_shake:Update(dt)
@@ -331,24 +471,17 @@ BattleScene.Draw = function (self)
     love.graphics.push()
     love.graphics.translate(shake_x, shake_y)
 
-    -- draw UI for current state
     if self.state == STATE.OPENING_DIALOGUE or self.state == STATE.CLOSING_DIALOGUE then
         self.dialogue_ui:Draw()
     elseif self.state == STATE.BATTLE then
-        self.battle_ui:Draw()
-
-        self.player_intro_anim:Draw()
-        self.enemy_intro_anim:Draw()
-
-        self.player_attack_anim:Draw()
-        self.enemy_attack_anim:Draw()
-
-        self.death_anim:Draw()
-
         self.floating_text:Draw()
     end
 
     love.graphics.pop()
+
+    if self.state == STATE.BATTLE then
+        self.root_node:Draw()
+    end
 end
 
 BattleScene.Exit = function (_)

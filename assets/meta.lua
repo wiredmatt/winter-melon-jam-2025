@@ -10,7 +10,11 @@
 ---@class GameAssets_sprites
 ---@field LICENSE_txt string
 ---@field animals_png love.Image
+---@field balanced_mask_png love.Image
+---@field fractured_crown_png love.Image
+---@field items_png love.Image
 ---@field monsters_png love.Image
+---@field opportunist_mask_png love.Image
 ---@field rogues_png love.Image
 
 ---@class GameAssets
