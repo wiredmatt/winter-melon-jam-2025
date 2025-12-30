@@ -129,7 +129,6 @@ AudioManager.StopAllMusic = function ()
         end
     end
     AudioManager.CleanupStoppedSources()
-    -- Clear crossfade state when stopping all music
     AudioManager.music_crossfade = nil
 end
 
@@ -149,11 +148,11 @@ AudioManager.StopAll = function ()
     AudioManager.sources = {}
 end
 
----Crossfade from one music source to another, optionally syncing playback position
----@param from_source love.Source? Current playing source (nil if starting fresh)
----@param to_source love.Source Target source to fade in
----@param duration number Fade duration in seconds
----@param sync_position boolean? If true, start to_source at from_source's position
+---crossfade from one music source to another, optionally syncing playback position
+---@param from_source love.Source? current playing source (nil if starting fresh)
+---@param to_source love.Source target source to fade in
+---@param duration number fade duration in seconds
+---@param sync_position boolean? if true, start to_source at from_source's position
 AudioManager.CrossfadeMusic = function(from_source, to_source, duration, sync_position)
     -- Get current playback position if syncing
     local start_position = 0
