@@ -1,6 +1,7 @@
 ---@meta
 
 ---@class GameAssets_fonts
+---@field OFL_txt string
 ---@field Tiny5_ttf ProxiedFont
 
 ---@class GameAssets_music
