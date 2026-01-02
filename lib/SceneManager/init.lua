@@ -6,7 +6,6 @@
 ---@field Draw fun(self)
 ---@field transition_in Transition|nil
 ---@field transition_out Transition|nil
----@field root_node Node?
 
 ---@class Transition
 ---@field completed boolean
@@ -32,7 +31,7 @@ local SceneManager = {
 }
 SceneManager.__index = SceneManager
 
-_G.__NOOP__ = _G.__NOOP__ or function (...) return nil end
+_G.__NOOP__ = _G.__NOOP__ or function(...) return nil end
 
 ---@param scene Scene
 SceneManager._validate = function(scene)
@@ -51,8 +50,8 @@ SceneManager.Register = function(scene)
 end
 
 ---@param scenes_tbl Scene[]
-SceneManager.RegisterAll = function (scenes_tbl)
-    for _,v in pairs(scenes_tbl) do
+SceneManager.RegisterAll = function(scenes_tbl)
+    for _, v in pairs(scenes_tbl) do
         SceneManager._validate(v)
         SceneManager.scenes[v.name] = v
     end
@@ -61,7 +60,7 @@ end
 ---@param name string|Scene
 ---@param transition_in fun()|nil
 ---@param transition_out fun()|nil
-SceneManager.SwitchTo = function (name, transition_in, transition_out)
+SceneManager.SwitchTo = function(name, transition_in, transition_out)
     if type(name) == "table" then if name.name ~= nil then name = name.name end end
 
     assert(type(name) == 'string', "Scene name must be string")
