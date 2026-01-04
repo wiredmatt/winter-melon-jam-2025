@@ -4,14 +4,18 @@
 ---@field private _hovered BaseNode|nil
 ---@field private _pressed { [1|2|3]: BaseNode|nil }
 ---@field private _dirty boolean
----@field private _sorted_cache BaseNode[]
+---@field private _sorted_layers Layer[]
+---@field private _layer_nodes { [Layer]: BaseNode[] }
+---@field private _no_layer_nodes BaseNode[]
 local MouseInputPlugin = {
     name = "MouseInputPlugin",
     _nodes = {},
     _hovered = nil,
     _pressed = {},
     _dirty = true,
-    _sorted_cache = {},
+    _sorted_layers = {},
+    _layer_nodes = {},
+    _no_layer_nodes = {},
 }
 
 ---@param node BaseNode
@@ -37,30 +41,10 @@ local function GetTreePath(node)
     return path
 end
 
---- Get the render order of a node's layer (or -math.huge if no layer)
----@param node BaseNode
----@return number
-local function GetLayerRenderOrder(node)
-    if node._layer then
-        return node._layer.render_order
-    end
-    return -math.huge  -- nodes without layer sort to bottom
-end
-
---- compare two nodes by their visual order (render order)
---- returns true if a is rendered before b (meaning b is on top)
 ---@param a BaseNode
 ---@param b BaseNode
----@return boolean
+---@return boolean b_on_top true if a is rendered before b (meaning b is on top)
 local function CompareByTreeOrder(a, b)
-    -- First compare by layer render_order
-    local layer_order_a = GetLayerRenderOrder(a)
-    local layer_order_b = GetLayerRenderOrder(b)
-    if layer_order_a ~= layer_order_b then
-        return layer_order_a < layer_order_b
-    end
-
-    -- Same layer (or both no layer), compare by tree order
     local path_a = GetTreePath(a)
     local path_b = GetTreePath(b)
 
@@ -75,13 +59,75 @@ local function CompareByTreeOrder(a, b)
     return #path_a < #path_b
 end
 
-local function RebuildSortedCache()
-    local nodes = {}
-    for node in pairs(MouseInputPlugin._nodes) do
-        table.insert(nodes, node)
+--- transform screen coordinates to world coordinates using inverse camera transform
+--- Layer.Draw applies: scale(1/s) -> rotate(-r) -> translate(-pos)
+--- inverse is: scale(s) -> rotate(+r) -> translate(+pos)
+---@param screenx number
+---@param screeny number
+---@param camera BaseNode?
+---@return number wx, number wy world coordinates
+local function ScreenToWorld(screenx, screeny, camera)
+    if not camera then
+        return screenx, screeny
     end
-    table.sort(nodes, CompareByTreeOrder)
-    MouseInputPlugin._sorted_cache = nodes
+
+    local cx, cy, cr, csx, csy = camera:GetWorldTransform()
+
+    -- step 1: scale (undo 1/scale)
+    local tx = screenx * csx
+    local ty = screeny * csy
+
+    -- step 2: rotate by +cr (undo -cr rotation)
+    local cos_r = math.cos(cr)
+    local sin_r = math.sin(cr)
+    local rx = tx * cos_r - ty * sin_r
+    local ry = tx * sin_r + ty * cos_r
+
+    -- step 3: translate (undo -position)
+    local wx = rx + cx
+    local wy = ry + cy
+
+    return wx, wy
+end
+
+local function RebuildSortedCache()
+    local layer_set = {}  ---@type { [Layer]: boolean }
+    local layer_nodes = {}  ---@type { [Layer]: BaseNode[] }
+    local no_layer_nodes = {}  ---@type BaseNode[]
+
+    for node in pairs(MouseInputPlugin._nodes) do
+        local layer = node._layer
+        if layer then
+            layer_set[layer] = true
+            if not layer_nodes[layer] then
+                layer_nodes[layer] = {}
+            end
+            table.insert(layer_nodes[layer], node)
+        else
+            table.insert(no_layer_nodes, node)
+        end
+    end
+
+    -- sort layers by render_order descending (highest first for hit testing)
+    local sorted_layers = {}
+    for layer in pairs(layer_set) do
+        table.insert(sorted_layers, layer)
+    end
+    table.sort(sorted_layers, function(a, b)
+        return a.render_order > b.render_order
+    end)
+
+    -- sort nodes within each layer by tree order
+    for _, nodes in pairs(layer_nodes) do
+        table.sort(nodes, CompareByTreeOrder)
+    end
+
+    -- sort no-layer nodes by tree order
+    table.sort(no_layer_nodes, CompareByTreeOrder)
+
+    MouseInputPlugin._sorted_layers = sorted_layers
+    MouseInputPlugin._layer_nodes = layer_nodes
+    MouseInputPlugin._no_layer_nodes = no_layer_nodes
     MouseInputPlugin._dirty = false
 end
 
@@ -214,7 +260,9 @@ MouseInputPlugin.UninstallFromAll = function()
     MouseInputPlugin._nodes = {}
     MouseInputPlugin._hovered = nil
     MouseInputPlugin._pressed = {}
-    MouseInputPlugin._sorted_cache = {}
+    MouseInputPlugin._sorted_layers = {}
+    MouseInputPlugin._layer_nodes = {}
+    MouseInputPlugin._no_layer_nodes = {}
     MouseInputPlugin._dirty = false
 end
 
@@ -223,28 +271,46 @@ MouseInputPlugin.MarkDirty = function()
     MouseInputPlugin._dirty = true
 end
 
-MouseInputPlugin.Update = function(dt)
+--- find the topmost node under the mouse, respecting layer order and camera transforms
+---@param mx number mouse x (screen coordinates)
+---@param my number mouse y (screen coordinates)
+---@return BaseNode?
+local function FindHitTarget(mx, my)
+    for _, layer in ipairs(MouseInputPlugin._sorted_layers) do
+        if layer.interactive then
+            local wx, wy = ScreenToWorld(mx, my, layer.camera)
+
+            local nodes = MouseInputPlugin._layer_nodes[layer]
+            if nodes then
+                for i = #nodes, 1, -1 do
+                    local node = nodes[i]
+                    if node:ContainsPoint(wx, wy) then
+                        return node
+                    end
+                end
+            end
+        end
+    end
+
+    local no_layer = MouseInputPlugin._no_layer_nodes
+    for i = #no_layer, 1, -1 do
+        local node = no_layer[i]
+        if node:ContainsPoint(mx, my) then
+            return node
+        end
+    end
+
+    return nil
+end
+
+MouseInputPlugin.Update = function(_dt)
     local mx, my = MouseInputPlugin._mouseprovider.GetPosition()
 
     if MouseInputPlugin._dirty then
         RebuildSortedCache()
     end
 
-    local sorted = MouseInputPlugin._sorted_cache
-
-    local target = nil
-    for i = #sorted, 1, -1 do
-        local node = sorted[i]
-        -- skip nodes in non-interactive layers
-        if node._layer and not node._layer.interactive then
-            goto continue
-        end
-        if node:ContainsPoint(mx, my) then
-            target = node
-            break
-        end
-        ::continue::
-    end
+    local target = FindHitTarget(mx, my)
 
     local prev_hovered = MouseInputPlugin._hovered
     if prev_hovered ~= target then

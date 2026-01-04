@@ -81,7 +81,7 @@ MainMenuScene.Update = function(self, dt)
 
     self.btn_node_1:SetX(self.btn_node_1.x + (10 * dt)*k)
 
-    self.icon.r = self.icon.r + math.rad(1) *k
+    self.btn_node_1:SetRotation(self.btn_node_1.r + math.rad(1) *k)
 
     if self.btn_node_1.x > CONFIG.virtual_cfg.width then
         k = -1
@@ -91,7 +91,6 @@ MainMenuScene.Update = function(self, dt)
 end
 
 MainMenuScene.Draw = function(self)
-    love.graphics.clear()
     self.layers:Draw()
 end
 
