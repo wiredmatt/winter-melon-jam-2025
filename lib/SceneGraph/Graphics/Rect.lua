@@ -1,16 +1,5 @@
----@class RectDrawable
----@field width number?
----@field height number?
----@field x number
----@field y number
----@field r number
----@field sx number
----@field sy number
----@field ox number
----@field oy number
----@field color number[]
+---@class RectDrawable : Drawable
 ---@field mode love.DrawMode
----@field _node BaseNode?
 local Rect = {}
 
 ---@param opts { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: number[]?, mode: love.DrawMode? }?

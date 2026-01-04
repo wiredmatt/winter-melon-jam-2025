@@ -1,15 +1,8 @@
----@class SpriteDrawable
+---@class SpriteDrawable : Drawable
 ---@field image love.Image
 ---@field quad love.Quad?
----@field x number
----@field y number
----@field r number
----@field sx number
----@field sy number
----@field ox number
----@field oy number
----@field color number[]
----@field _node BaseNode?
+---@field width number
+---@field height number
 local Sprite = {}
 
 ---@param image love.Image
@@ -18,6 +11,12 @@ local Sprite = {}
 ---@return SpriteDrawable
 function Sprite.New(image, quad, opts)
     opts = opts or {}
+    local _,_,w,h = 0,0,0,0
+    if quad ~= nil then
+        _,_,w,h = quad:getViewport()
+    else
+        w,h = image:getDimensions()
+    end
 
     local self = {
         image = image,
@@ -30,6 +29,9 @@ function Sprite.New(image, quad, opts)
         sy = opts.sy or 1,
         ox = opts.ox or 0,
         oy = opts.oy or 0,
+
+        width = w,
+        height = h,
 
         color = opts.color or {1, 1, 1, 1},
 

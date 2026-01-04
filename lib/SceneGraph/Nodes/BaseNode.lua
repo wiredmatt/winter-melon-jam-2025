@@ -31,6 +31,7 @@
 ---@field _cached_wr number
 ---@field _cached_wsx number
 ---@field _cached_wsy number
+---@field _layer Layer?
 local BaseNode = {}
 BaseNode.__index = BaseNode
 
@@ -75,6 +76,11 @@ BaseNode.AddChild = function(self, child)
     table.insert(self.children, child)
     child.parent = self
     child:MarkTransformDirty()
+
+    -- Propagate layer to child and its descendants
+    if self._layer then
+        child:SetLayerRecursive(self._layer)
+    end
 end
 
 ---@param child BaseNode
@@ -99,6 +105,15 @@ BaseNode.MarkTransformDirty = function(self)
     self._transform_dirty = true
     for _, child in ipairs(self.children) do
         child:MarkTransformDirty()
+    end
+end
+
+--- Sets the layer reference on this node and all descendants
+---@param layer Layer?
+BaseNode.SetLayerRecursive = function(self, layer)
+    self._layer = layer
+    for _, child in ipairs(self.children) do
+        child:SetLayerRecursive(layer)
     end
 end
 
@@ -174,7 +189,7 @@ BaseNode.SetOrigin = function(self, ox, oy)
 end
 
 ---@param ox number
-BaseNode.SetOX = function(self, ox, oy)
+BaseNode.SetOX = function(self, ox)
     if self.ox ~= ox then
         self.ox = ox
         self:MarkTransformDirty()

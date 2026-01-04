@@ -37,12 +37,30 @@ local function GetTreePath(node)
     return path
 end
 
+--- Get the render order of a node's layer (or -math.huge if no layer)
+---@param node BaseNode
+---@return number
+local function GetLayerRenderOrder(node)
+    if node._layer then
+        return node._layer.render_order
+    end
+    return -math.huge  -- nodes without layer sort to bottom
+end
+
 --- compare two nodes by their visual order (render order)
---- ceturns true if a is rendered before b (meaning b is on top)
+--- returns true if a is rendered before b (meaning b is on top)
 ---@param a BaseNode
 ---@param b BaseNode
 ---@return boolean
 local function CompareByTreeOrder(a, b)
+    -- First compare by layer render_order
+    local layer_order_a = GetLayerRenderOrder(a)
+    local layer_order_b = GetLayerRenderOrder(b)
+    if layer_order_a ~= layer_order_b then
+        return layer_order_a < layer_order_b
+    end
+
+    -- Same layer (or both no layer), compare by tree order
     local path_a = GetTreePath(a)
     local path_b = GetTreePath(b)
 
@@ -217,10 +235,15 @@ MouseInputPlugin.Update = function(dt)
     local target = nil
     for i = #sorted, 1, -1 do
         local node = sorted[i]
+        -- skip nodes in non-interactive layers
+        if node._layer and not node._layer.interactive then
+            goto continue
+        end
         if node:ContainsPoint(mx, my) then
             target = node
             break
         end
+        ::continue::
     end
 
     local prev_hovered = MouseInputPlugin._hovered
@@ -229,7 +252,7 @@ MouseInputPlugin.Update = function(dt)
             prev_hovered:OnMouseLeave()
         end
         if target then
-            -- Call OnMouseEnter on target, then bubble if not consumed
+            -- call OnMouseEnter on target, then bubble if not consumed
             local consumed = false
             if target.OnMouseEnter then
                 consumed = target:OnMouseEnter(mx, my) == true
@@ -251,7 +274,7 @@ MouseInputPlugin.Update = function(dt)
     end
 
     if target then
-        -- Call OnMouseMove on target, then bubble if not consumed
+        -- call OnMouseMove on target, then bubble if not consumed
         local consumed = false
         if target.OnMouseMove then
             consumed = target:OnMouseMove(mx, my) == true
@@ -276,7 +299,7 @@ MouseInputPlugin.Update = function(dt)
             if pressed_node then
                 -- NOTE(matt): good ux here means that OnMouseUp "cancels" the final event
                 --             if mx and my are outside the button's rect.
-                -- Call OnMouseUp on target, then bubble if not consumed
+                -- call OnMouseUp on target, then bubble if not consumed
                 local consumed = false
                 if pressed_node.OnMouseUp then
                     consumed = pressed_node:OnMouseUp(mx, my, btn) == true
@@ -301,7 +324,7 @@ MouseInputPlugin.Update = function(dt)
     for btn = 1, 3 do
         if MouseInputPlugin._mouseprovider.JustPressed(btn) then
             if target then
-                -- Call OnMouseDown on target, then bubble if not consumed
+                -- call OnMouseDown on target, then bubble if not consumed
                 local consumed = false
                 if target.OnMouseDown then
                     consumed = target:OnMouseDown(mx, my, btn) == true
