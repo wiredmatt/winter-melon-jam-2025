@@ -12,6 +12,7 @@ _G.CONFIG = require("program_cfg")
 _G.Settings = require("lib.Settings")
 _G.AudioManager = require("lib.AudioManager")
 _G.SceneManager = require("lib.SceneManager")
+_G.SceneGraph = require("lib.SceneGraph")
 _G.Scenes = require("src.scenes.scenes")
 
 local Game = require("src.game")

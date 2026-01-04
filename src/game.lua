@@ -27,6 +27,7 @@ end
 
 Game.Update = function (self, dt)
     SceneManager.Update(dt)
+    SceneGraph.PluginManager.Update(dt)
 end
 
 return Game

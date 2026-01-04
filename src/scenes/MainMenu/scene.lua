@@ -1,5 +1,4 @@
 local inputmap = require("src.scenes.MainMenu.inputmap")
-local SceneGraph = require("lib.SceneGraph")
 local CHARACTERS = require("data.characters")
 
 ---@class MainMenuScene : Scene
@@ -71,14 +70,24 @@ end
 MainMenuScene.HandleInput = function(_self, _dt)
 end
 
+local k = 1
+
 MainMenuScene.Update = function(self, dt)
     self.layers:Update(dt)
 
-    if self.btn_node_1.sx <= 3 then
-        self.btn_node_1:SetScale(self.btn_node_1.sx + 1 * dt)
+    if self.btn_node_1.sx <= (3 * k) then
+        self.btn_node_1:SetScale(self.btn_node_1.sx + (1 * dt)*k)
     end
 
-    self.icon.r = self.icon.r + math.rad(1)
+    self.btn_node_1:SetX(self.btn_node_1.x + (10 * dt)*k)
+
+    self.icon.r = self.icon.r + math.rad(1) *k
+
+    if self.btn_node_1.x > CONFIG.virtual_cfg.width then
+        k = -1
+    elseif self.btn_node_1.x <= 0 then
+        k = 1
+    end
 end
 
 MainMenuScene.Draw = function(self)

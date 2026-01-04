@@ -280,7 +280,7 @@ end
 
 ---@return number x, number y, number width, number height
 BaseNode.GetLocalBounds = function(self)
-    return 0, 0, self.width, self.height
+    return -self.ox, -self.oy, self.width, self.height
 end
 
 ---@param wx number world X coordinate
