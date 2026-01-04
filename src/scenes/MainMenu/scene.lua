@@ -1,6 +1,8 @@
 local inputmap = require("src.scenes.MainMenu.inputmap")
+local SceneGraph = require("lib.SceneGraph")
 
-local SoundPoolPicker = require "lib.SoundPoolPicker"
+local SoundPoolPicker = require("lib.SoundPoolPicker")
+
 ---@class MainMenuScene : Scene
 local MainMenuScene = {
     name = "MainMenu",
@@ -9,7 +11,9 @@ local MainMenuScene = {
         h = CONFIG.virtual_cfg.height
     }),
     transition_out = SceneManager.Transitions.FadeOut.New(),
-    inputmap = inputmap
+    inputmap = inputmap,
+    ---@type BaseNode
+    root_node = nil
 }
 
 MainMenuScene.Enter = function(self)
@@ -17,13 +21,39 @@ MainMenuScene.Enter = function(self)
     InputManager.LoadBindings(self.name, self.inputmap.bindings)
     InputManager.SetActiveMap(self.name)
     AudioManager.PlayMusic(AssetManager.assets.music.menu_wav, true)
+
+    self.root_node = SceneGraph.Nodes.BaseNode.New()
+
+    local btn_node_1 = SceneGraph.Nodes.BaseNode.New({
+        x = 0,
+        y = 0,
+        width = 32,
+        height = 32
+    })
+    SceneGraph.Plugins.MouseInput.InstallTo(btn_node_1).OnMouseDown(function (_, x, y, btn)
+        print("btn1", x,y, btn)
+    end)
+
+    local btn_node_2 = SceneGraph.Nodes.BaseNode.New({
+        x = 60,
+        y = 0,
+        width = 32,
+        height = 32
+    })
+    SceneGraph.Plugins.MouseInput.InstallTo(btn_node_2).OnMouseDown(function (_, x, y, btn)
+        print("btn2", x,y,btn)
+    end)
+
+    self.root_node:AddChild(btn_node_1)
+    self.root_node:AddChild(btn_node_2)
 end
 
 MainMenuScene.HandleInput = function(self, dt)
 end
 
 MainMenuScene.Update = function(self, dt)
-    self:HandleInput(dt)
+    self.root_node:Update(dt)
+    SceneGraph.Update(dt)
 end
 
 MainMenuScene.Draw = function(self)

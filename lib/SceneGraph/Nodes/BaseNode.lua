@@ -1,13 +1,13 @@
 ---@class BaseNodeConfig
----@field x number
----@field y number
----@field r number
----@field sx number
----@field sy number
----@field width number
----@field height number
----@field enabled boolean
----@field visible boolean
+---@field x number?
+---@field y number?
+---@field r number?
+---@field sx number?
+---@field sy number?
+---@field width number?
+---@field height number?
+---@field enabled boolean?
+---@field visible boolean?
 
 ---@class BaseNode : BaseNodeConfig
 ---@field parent BaseNode?
@@ -16,7 +16,7 @@
 local BaseNode = {}
 BaseNode.__index = BaseNode
 
----@param config BaseNodeConfig
+---@param config BaseNodeConfig?
 BaseNode.New = function(config)
     config = config or {}
     local self = setmetatable(config, BaseNode)
@@ -29,11 +29,13 @@ BaseNode.New = function(config)
     self.width = self.width or 0
     self.height = self.height or 0
 
+    self.children = {}
+
     self.enabled = self.enabled or true
     self.visible = self.visible or true
     self.plugins = {}
 
-    return self
+    return self --[[@as BaseNode]]
 end
 
 ---@param child BaseNode

@@ -18,11 +18,11 @@ local AudioManager = {
 
 ---@param settings { master_volume: number, music_volume: number, sfx_volume: number } | nil
 AudioManager.Init = function (settings)
-    if type(settings) == "table" then
-        AudioManager.master_volume = settings.master_volume or 1.0
-        AudioManager.music_volume = settings.music_volume or 1.0
-        AudioManager.sfx_volume = settings.sfx_volume or 1.0
-    end
+    settings = settings or {}
+
+    AudioManager.master_volume = settings.master_volume or 1.0
+    AudioManager.music_volume = settings.music_volume or 1.0
+    AudioManager.sfx_volume = settings.sfx_volume or 1.0
 end
 
 ---@param source love.Source

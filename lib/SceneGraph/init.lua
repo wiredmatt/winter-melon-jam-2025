@@ -4,4 +4,10 @@ local SceneGraph = {
     Behaviors = require("lib.SceneGraph.Behaviors")
 }
 
+SceneGraph.Update = function (dt)
+    for _, p in pairs(SceneGraph.Plugins) do
+        p.Update(dt)
+    end
+end
+
 return SceneGraph

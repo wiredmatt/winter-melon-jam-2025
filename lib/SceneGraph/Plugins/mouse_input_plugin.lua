@@ -14,7 +14,6 @@ local MouseInputPlugin = {
     _sorted_cache = {},
 }
 
---- Get the path from root to node as a list of sibling indices
 ---@param node BaseNode
 ---@return integer[]
 local function GetTreePath(node)
@@ -38,8 +37,8 @@ local function GetTreePath(node)
     return path
 end
 
---- Compare two nodes by their visual order (render order)
---- Returns true if a is rendered before b (meaning b is on top)
+--- compare two nodes by their visual order (render order)
+--- ceturns true if a is rendered before b (meaning b is on top)
 ---@param a BaseNode
 ---@param b BaseNode
 ---@return boolean
@@ -47,7 +46,6 @@ local function CompareByTreeOrder(a, b)
     local path_a = GetTreePath(a)
     local path_b = GetTreePath(b)
 
-    -- Compare paths lexicographically
     local min_len = math.min(#path_a, #path_b)
     for i = 1, min_len do
         if path_a[i] ~= path_b[i] then
@@ -55,11 +53,10 @@ local function CompareByTreeOrder(a, b)
         end
     end
 
-    -- If one path is a prefix of the other, the shorter one (ancestor) renders first
+    -- if one path is a prefix of the other, the shorter one (ancestor) renders first
     return #path_a < #path_b
 end
 
---- Rebuild the sorted cache
 local function RebuildSortedCache()
     local nodes = {}
     for node in pairs(MouseInputPlugin._nodes) do
@@ -73,20 +70,28 @@ end
 ---if reparenting nodes with AddChild/RemoveChild after they've installed this plugin, 
 ---call MouseInputPlugin.MarkDirty() to re-sort on the next frame
 ---@param node BaseNode
----@return table builder
 MouseInputPlugin.InstallTo = function(node)
     if node.plugins[MouseInputPlugin] == nil then
         node.plugins[MouseInputPlugin] = true
         MouseInputPlugin._nodes[node] = true
         MouseInputPlugin._dirty = true
+        local __og_Destroy = node.Destroy
+        node.Destroy = function (...)
+            MouseInputPlugin.UninstallFrom(node)
+            return __og_Destroy(...)
+        end
     end
 
     ---@class BaseNode
     ---@field OnMouseMove fun(self: BaseNode, x: number, y: number): boolean|nil
+    ---@field OnMouseMoveBubble fun(self: BaseNode, x: number, y: number, child: BaseNode): boolean|nil
     ---@field OnMouseEnter fun(self: BaseNode, x: number, y: number): boolean|nil
+    ---@field OnMouseEnterBubble fun(self: BaseNode, x: number, y: number, child: BaseNode): boolean|nil
     ---@field OnMouseLeave fun(self: BaseNode): boolean|nil
     ---@field OnMouseDown fun(self: BaseNode, x: number, y: number, btn: integer): boolean|nil
+    ---@field OnMouseDownBubble fun(self: BaseNode, x: number, y: number, btn: integer, child: BaseNode): boolean|nil
     ---@field OnMouseUp fun(self: BaseNode, x: number, y: number, btn: integer): boolean|nil
+    ---@field OnMouseUpBubble fun(self: BaseNode, x: number, y: number, btn: integer, child: BaseNode): boolean|nil
     ---@field IsPressed fun(self: BaseNode, btn: 1|2|3): boolean
 
     ---@param btn 1|2|3
@@ -95,6 +100,7 @@ MouseInputPlugin.InstallTo = function(node)
         return MouseInputPlugin._pressed[btn] == self
     end
 
+    ---@class MouseInputBuilder
     local builder
     builder = {
         ---@param callback fun(self: BaseNode, x: number, y: number): boolean|nil
@@ -102,9 +108,19 @@ MouseInputPlugin.InstallTo = function(node)
             node.OnMouseMove = callback
             return builder
         end,
+        ---@param callback fun(self: BaseNode, x: number, y: number, child: BaseNode): boolean|nil
+        OnMouseMovedBubble = function(callback)
+            node.OnMouseMoveBubble = callback
+            return builder
+        end,
         ---@param callback fun(self: BaseNode, x: number, y: number): boolean|nil
         OnMouseEnter = function(callback)
             node.OnMouseEnter = callback
+            return builder
+        end,
+        ---@param callback fun(self: BaseNode, x: number, y: number, child: BaseNode): boolean|nil
+        OnMouseEnterBubble = function(callback)
+            node.OnMouseEnterBubble = callback
             return builder
         end,
         ---@param callback fun(self: BaseNode): boolean|nil
@@ -117,9 +133,19 @@ MouseInputPlugin.InstallTo = function(node)
             node.OnMouseDown = callback
             return builder
         end,
+        ---@param callback fun(self: BaseNode, x: number, y: number, btn: integer, child: BaseNode): boolean|nil
+        OnMouseDownBubble = function(callback)
+            node.OnMouseDownBubble = callback
+            return builder
+        end,
         ---@param callback fun(self: BaseNode, x: number, y: number, btn: integer): boolean|nil
         OnMouseUp = function(callback)
             node.OnMouseUp = callback
+            return builder
+        end,
+        ---@param callback fun(self: BaseNode, x: number, y: number, btn: integer, child: BaseNode): boolean|nil
+        OnMouseUpBubble = function(callback)
+            node.OnMouseUpBubble = callback
             return builder
         end,
     }
@@ -133,14 +159,16 @@ MouseInputPlugin.UninstallFrom = function(node)
     MouseInputPlugin._nodes[node] = nil
     MouseInputPlugin._dirty = true
 
-    -- Clear callbacks
     node.OnMouseMove = nil
+    node.OnMouseMoveBubble = nil
     node.OnMouseEnter = nil
+    node.OnMouseEnterBubble = nil
     node.OnMouseLeave = nil
     node.OnMouseDown = nil
+    node.OnMouseDownBubble = nil
     node.OnMouseUp = nil
+    node.OnMouseUpBubble = nil
 
-    -- Clear global state referencing this node
     if MouseInputPlugin._hovered == node then
         MouseInputPlugin._hovered = nil
     end
@@ -155,10 +183,14 @@ MouseInputPlugin.UninstallFromAll = function()
     for node in pairs(MouseInputPlugin._nodes) do
         node.plugins[MouseInputPlugin] = nil
         node.OnMouseMove = nil
+        node.OnMouseMoveBubble = nil
         node.OnMouseEnter = nil
+        node.OnMouseEnterBubble = nil
         node.OnMouseLeave = nil
         node.OnMouseDown = nil
+        node.OnMouseDownBubble = nil
         node.OnMouseUp = nil
+        node.OnMouseUpBubble = nil
     end
 
     MouseInputPlugin._nodes = {}
@@ -168,13 +200,12 @@ MouseInputPlugin.UninstallFromAll = function()
     MouseInputPlugin._dirty = false
 end
 
---- Mark the sort order as dirty, forcing a re-sort on next update.
---- Call this after reparenting nodes in the scene graph.
+---manually call this after reparenting nodes in the scene graph.
 MouseInputPlugin.MarkDirty = function()
     MouseInputPlugin._dirty = true
 end
 
-MouseInputPlugin.Update = function()
+MouseInputPlugin.Update = function(dt)
     local mx, my = MouseInputPlugin._mouseprovider.GetPosition()
 
     if MouseInputPlugin._dirty then
@@ -194,17 +225,49 @@ MouseInputPlugin.Update = function()
 
     local prev_hovered = MouseInputPlugin._hovered
     if prev_hovered ~= target then
-        if prev_hovered then
+        if prev_hovered and prev_hovered.OnMouseLeave then
             prev_hovered:OnMouseLeave()
         end
         if target then
-            target:OnMouseEnter(mx, my)
+            -- Call OnMouseEnter on target, then bubble if not consumed
+            local consumed = false
+            if target.OnMouseEnter then
+                consumed = target:OnMouseEnter(mx, my) == true
+            end
+
+            if not consumed then
+                local child = target
+                local current = target.parent
+                while current do
+                    if current.OnMouseEnterBubble and current:OnMouseEnterBubble(mx, my, child) then
+                        break
+                    end
+                    child = current
+                    current = current.parent
+                end
+            end
         end
         MouseInputPlugin._hovered = target
     end
 
-    if target and target.OnMouseMove then
-        target:OnMouseMove(mx, my)
+    if target then
+        -- Call OnMouseMove on target, then bubble if not consumed
+        local consumed = false
+        if target.OnMouseMove then
+            consumed = target:OnMouseMove(mx, my) == true
+        end
+
+        if not consumed then
+            local child = target
+            local current = target.parent
+            while current do
+                if current.OnMouseMoveBubble and current:OnMouseMoveBubble(mx, my, child) then
+                    break
+                end
+                child = current
+                current = current.parent
+            end
+        end
     end
 
     for btn = 1, 3 do
@@ -213,7 +276,23 @@ MouseInputPlugin.Update = function()
             if pressed_node then
                 -- NOTE(matt): good ux here means that OnMouseUp "cancels" the final event
                 --             if mx and my are outside the button's rect.
-                pressed_node:OnMouseUp(mx, my, btn)
+                -- Call OnMouseUp on target, then bubble if not consumed
+                local consumed = false
+                if pressed_node.OnMouseUp then
+                    consumed = pressed_node:OnMouseUp(mx, my, btn) == true
+                end
+
+                if not consumed then
+                    local child = pressed_node
+                    local current = pressed_node.parent
+                    while current do
+                        if current.OnMouseUpBubble and current:OnMouseUpBubble(mx, my, btn, child) then
+                            break
+                        end
+                        child = current
+                        current = current.parent
+                    end
+                end
             end
             MouseInputPlugin._pressed[btn] = nil
         end
@@ -222,7 +301,23 @@ MouseInputPlugin.Update = function()
     for btn = 1, 3 do
         if MouseInputPlugin._mouseprovider.JustPressed(btn) then
             if target then
-                target:OnMouseDown(mx, my, btn)
+                -- Call OnMouseDown on target, then bubble if not consumed
+                local consumed = false
+                if target.OnMouseDown then
+                    consumed = target:OnMouseDown(mx, my, btn) == true
+                end
+
+                if not consumed then
+                    local child = target
+                    local current = target.parent
+                    while current do
+                        if current.OnMouseDownBubble and current:OnMouseDownBubble(mx, my, btn, child) then
+                            break
+                        end
+                        child = current
+                        current = current.parent
+                    end
+                end
             end
             MouseInputPlugin._pressed[btn] = target
         end

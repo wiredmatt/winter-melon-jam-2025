@@ -2,7 +2,7 @@
 
 ---@class Plugin
 ---@field name string
----@field InstallTo fun(self, node: table)
----@field UninstallFrom fun(self, node: table)
----@field UninstallFromAll fun(self)
----@field Update fun(self, dt: number)
+---@field InstallTo fun(node: table)
+---@field UninstallFrom fun(node: table)
+---@field UninstallFromAll fun()
+---@field Update fun(dt: number)
