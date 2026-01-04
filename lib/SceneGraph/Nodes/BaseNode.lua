@@ -13,6 +13,7 @@
 ---@field parent BaseNode?
 ---@field children BaseNode[]
 ---@field plugins { [table]: boolean }
+---@field graphics NodeGraphics
 local BaseNode = {}
 BaseNode.__index = BaseNode
 
@@ -93,8 +94,10 @@ BaseNode.Draw = function(self)
     love.graphics.rotate(self.r)
     love.graphics.scale(self.sx, self.sy)
 
-    -- override this method in subclasses to draw content here
-    -- ...
+    -- draw graphics layers
+    if self.graphics then
+        self.graphics:Draw()
+    end
 
     -- draw all children after
     for _, child in ipairs(self.children) do
