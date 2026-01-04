@@ -1,8 +1,4 @@
 local inputmap = require("src.scenes.Settings.inputmap")
-local SoundPoolPicker = require("lib.SoundPoolPicker")
-
-local actions = inputmap.actions
-local bindings = inputmap.bindings
 
 ---@class SettingsScene : Scene
 local SettingsScene = {
@@ -11,7 +7,7 @@ local SettingsScene = {
 
 SettingsScene.Enter = function(self)
     InputManager.DefineMap(self.name)
-    InputManager.LoadBindings(self.name, bindings)
+    InputManager.LoadBindings(self.name, inputmap.bindings)
     InputManager.SetActiveMap(self.name)
 
     local tiny5_8px_font = AssetManager.assets.fonts.Tiny5_ttf[8]

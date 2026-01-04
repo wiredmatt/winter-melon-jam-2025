@@ -1,11 +1,8 @@
 local inputmap = require("src.scenes.MainMenu.inputmap")
-local CHARACTERS = require("data.characters")
 
 ---@class MainMenuScene : Scene
 ---@field layers LayerManager
 ---@field ui_layer Layer
----@field btn_node_1 BaseNode
----@field btn_node_2 BaseNode
 local MainMenuScene = {
     name = "MainMenu",
     -- transition_in = SceneManager.Transitions.DiagonalOut.New({
@@ -31,37 +28,25 @@ MainMenuScene.Enter = function(self)
     })
     self.layers:Add(self.ui_layer)
 
-    -- todo: make ox and oy work with 0.0 - 1.0? or just use anchors instead
-    local btn_node_1 = SceneGraph.Nodes.BaseNode.New({
+    local start_button = SceneGraph.Nodes.BaseNode.New({
         x = 60,
-        y = 60,
-        width = 32,
-        height = 32,
-        ox = 32/2,
-        oy = 32/2
+        y = 10,
+        width = 200,
+        height = 100
     })
-    local _,_, pw, ph = CHARACTERS.Player.sprite_quad:getViewport()
-    CHARACTERS.Player.sprite_image:setFilter("nearest")
 
-    SceneGraph.Graphics.On(btn_node_1)
+    SceneGraph.Graphics.On(start_button)
+        :Add(SceneGraph.Graphics.Rect.New({
+            color = { 100/255, 149/255, 237/255, 1},
+            mode = "fill",
+        }), "border")
         :Add(SceneGraph.Graphics.Rect.New({
             color = { 100/255, 149/255, 237/255, 1},
             mode = "line",
         }), "border")
-        :Add(SceneGraph.Graphics.Sprite.New(
-            CHARACTERS.Player.sprite_image,
-            CHARACTERS.Player.sprite_quad,
-            {
-                x = pw/2,
-                y = ph/2,
-                r = math.rad(90),
-                ox = pw/2,
-                oy = ph/2
-            }
-        ), "icon")
-    SceneGraph.Plugins.Input.InstallTo(btn_node_1)
+    SceneGraph.Plugins.Input.InstallTo(start_button)
         .OnActivate(function(_, x, y, btn)
-            print("[btn_node_1] activated!", x, y, btn)
+            SceneManager.SwitchTo(Scenes.Gameplay)
         end)
         .OnFocus(function(_)
             print("[btn_node_1] focused!")
@@ -73,38 +58,7 @@ MainMenuScene.Enter = function(self)
             print("[btn_node_1] blurred!")
         end)
 
-    local btn_node_2 = SceneGraph.Nodes.BaseNode.New({
-        x = 60,
-        y = CONFIG.virtual_cfg.height-32,
-        width = 32,
-        height = 32,
-        ox = 32/2,
-        oy = 32/2
-    })
-    SceneGraph.Graphics.On(btn_node_2)
-        :Add(SceneGraph.Graphics.Rect.New({
-            color = { 37/255, 204/255, 230/255, 1},
-            mode = "line",
-        }), "border")
-    SceneGraph.Plugins.Input.InstallTo(btn_node_2)
-        .OnActivate(function(_, x, y, btn)
-            print("[btn_node_2] activated!", x, y, btn)
-        end)
-        .OnFocus(function(_)
-            print("[btn_node_2] focused!")
-        end)
-        .OnHover(function (_)
-            print("[btn_node_2] hovering")
-        end)
-        .OnBlur(function(_)
-            print("[btn_node_2] blurred!")
-        end)
-
-    self.ui_layer:AddChild(btn_node_1)
-    self.ui_layer:AddChild(btn_node_2)
-    self.btn_node_1 = btn_node_1
-    self.btn_node_2 = btn_node_2
-    self.icon = self.btn_node_1.graphics:Get("icon") --[[@as SpriteDrawable]]
+    self.ui_layer:AddChild(start_button)
 end
 
 MainMenuScene.HandleInput = function(self, _dt)
@@ -130,20 +84,6 @@ local k = 1
 MainMenuScene.Update = function(self, dt)
     self:HandleInput(dt)
     self.layers:Update(dt)
-
-    if self.btn_node_1.sx <= (3 * k) then
-        self.btn_node_1:SetScale(self.btn_node_1.sx + (1 * dt)*k)
-    end
-
-    self.btn_node_1:SetX(self.btn_node_1.x + (10 * dt)*k)
-
-    self.btn_node_1:SetRotation(self.btn_node_1.r + math.rad(1) *k)
-
-    if self.btn_node_1.x > CONFIG.virtual_cfg.width then
-        k = -1
-    elseif self.btn_node_1.x <= 0 then
-        k = 1
-    end
 end
 
 MainMenuScene.Draw = function(self)

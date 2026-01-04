@@ -14,6 +14,7 @@ _G.AudioManager = require("lib.AudioManager")
 _G.SceneManager = require("lib.SceneManager")
 _G.SceneGraph = require("lib.SceneGraph")
 _G.Scenes = require("src.scenes.scenes")
+_G.SoundPoolPicker = require("lib.SoundPoolPicker")
 
 local Game = require("src.game")
 local Program = require("lib.Program")
