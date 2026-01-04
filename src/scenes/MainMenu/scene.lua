@@ -58,16 +58,41 @@ MainMenuScene.Enter = function(self)
                 oy = ph/2
             }
         ), "icon")
-    SceneGraph.Plugins.MouseInput.InstallTo(btn_node_1).OnMouseDown(function (_, x, y, btn)
-        print("btn1", x, y, btn)
-    end)
+    SceneGraph.Plugins.Input.InstallTo(btn_node_1)
+        .OnActivate(function(_, x, y, btn)
+            print("activated!", x, y, btn)
+        end)
+        .OnFocus(function(_)
+            print("focused!")
+        end)
+        .OnHover(function (_)
+            print("hovering")
+        end)
+        .OnBlur(function(_)
+            print("blurred!")
+        end)
 
     self.ui_layer:AddChild(btn_node_1)
     self.btn_node_1 = btn_node_1
     self.icon = self.btn_node_1.graphics:Get("icon") --[[@as SpriteDrawable]]
 end
 
-MainMenuScene.HandleInput = function(_self, _dt)
+MainMenuScene.HandleInput = function(self, _dt)
+    local actions = self.inputmap.actions
+
+    if InputManager.JustPressed(actions.UP) then
+        SceneGraph.Plugins.Input.Navigate("up")
+    elseif InputManager.JustPressed(actions.DOWN) then
+        SceneGraph.Plugins.Input.Navigate("down")
+    elseif InputManager.JustPressed(actions.LEFT) then
+        SceneGraph.Plugins.Input.Navigate("left")
+    elseif InputManager.JustPressed(actions.RIGHT) then
+        SceneGraph.Plugins.Input.Navigate("right")
+    end
+
+    if InputManager.JustPressed(actions.CONFIRM) then
+        SceneGraph.Plugins.Input.Confirm()
+    end
 end
 
 local k = 1
