@@ -120,7 +120,7 @@ Program.Setup = function (config, game)
 
         love.mouse.getPosition = Program.Mouse.GetPosition;love.mouse.getX = Program.Mouse.GetX;love.mouse.getY = Program.Mouse.GetY
         love.mouse.setPosition = Program.Mouse.SetPosition;love.mouse.setX = Program.Mouse.SetX;love.mouse.setY = Program.Mouse.SetY
-        love.touch.GetPosition = Program.Touch.GetPosition
+        love.touch.getPosition = Program.Touch.GetPosition
 
         local og_setMode = love.window.setMode
         ---@diagnostic disable-next-line: duplicate-set-field

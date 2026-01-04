@@ -5,6 +5,10 @@ MouseInputSource.IsDown = function (button)
     return love.mouse.isDown(button)
 end
 
+MouseInputSource.GetPosition = function ()
+    return love.mouse.getPosition()
+end
+
 MouseInputSource.JustPressed = function (button)
     local current = MouseInputSource.IsDown(button)
     local was = MouseInputSource.prev_down[button] or false

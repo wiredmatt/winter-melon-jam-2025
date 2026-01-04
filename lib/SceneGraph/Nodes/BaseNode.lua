@@ -7,10 +7,12 @@
 ---@field width number
 ---@field height number
 ---@field enabled boolean
+---@field visible boolean
 
 ---@class BaseNode : BaseNodeConfig
 ---@field parent BaseNode?
 ---@field children BaseNode[]
+---@field plugins { [table]: boolean }
 local BaseNode = {}
 BaseNode.__index = BaseNode
 
@@ -28,6 +30,8 @@ BaseNode.New = function(config)
     self.height = self.height or 0
 
     self.enabled = self.enabled or true
+    self.visible = self.visible or true
+    self.plugins = {}
 
     return self
 end
@@ -80,6 +84,8 @@ BaseNode.GetWorldTransform = function(self)
 end
 
 BaseNode.Draw = function(self)
+    if not self.visible then return end
+
     love.graphics.push()
     love.graphics.translate(self.x, self.y)
     love.graphics.rotate(self.r)
