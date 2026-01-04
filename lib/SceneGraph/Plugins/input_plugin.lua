@@ -286,7 +286,7 @@ InputPlugin.InstallTo = function(node)
     end
 
     ---@class BaseNode
-    ---@field OnActivate fun(self: BaseNode, x: number?, y: number?, btn: integer?): boolean?
+    ---@field OnActivate fun(self: BaseNode): boolean?
     ---@field OnFocus fun(self: BaseNode): boolean?
     ---@field OnBlur fun(self: BaseNode): boolean?
     ---@field OnCancel fun(self: BaseNode): boolean?
@@ -441,7 +441,7 @@ end
 InputPlugin.Confirm = function()
     local focused = InputPlugin._focused
     if focused and focused.OnActivate then
-        focused:OnActivate(nil, nil, nil)
+        focused:OnActivate()
     end
 end
 

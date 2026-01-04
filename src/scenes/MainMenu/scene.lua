@@ -5,6 +5,7 @@ local CHARACTERS = require("data.characters")
 ---@field layers LayerManager
 ---@field ui_layer Layer
 ---@field btn_node_1 BaseNode
+---@field btn_node_2 BaseNode
 local MainMenuScene = {
     name = "MainMenu",
     -- transition_in = SceneManager.Transitions.DiagonalOut.New({
@@ -60,20 +61,49 @@ MainMenuScene.Enter = function(self)
         ), "icon")
     SceneGraph.Plugins.Input.InstallTo(btn_node_1)
         .OnActivate(function(_, x, y, btn)
-            print("activated!", x, y, btn)
+            print("[btn_node_1] activated!", x, y, btn)
         end)
         .OnFocus(function(_)
-            print("focused!")
+            print("[btn_node_1] focused!")
         end)
         .OnHover(function (_)
-            print("hovering")
+            print("[btn_node_1] hovering")
         end)
         .OnBlur(function(_)
-            print("blurred!")
+            print("[btn_node_1] blurred!")
+        end)
+
+    local btn_node_2 = SceneGraph.Nodes.BaseNode.New({
+        x = 60,
+        y = CONFIG.virtual_cfg.height-32,
+        width = 32,
+        height = 32,
+        ox = 32/2,
+        oy = 32/2
+    })
+    SceneGraph.Graphics.On(btn_node_2)
+        :Add(SceneGraph.Graphics.Rect.New({
+            color = { 37/255, 204/255, 230/255, 1},
+            mode = "line",
+        }), "border")
+    SceneGraph.Plugins.Input.InstallTo(btn_node_2)
+        .OnActivate(function(_, x, y, btn)
+            print("[btn_node_2] activated!", x, y, btn)
+        end)
+        .OnFocus(function(_)
+            print("[btn_node_2] focused!")
+        end)
+        .OnHover(function (_)
+            print("[btn_node_2] hovering")
+        end)
+        .OnBlur(function(_)
+            print("[btn_node_2] blurred!")
         end)
 
     self.ui_layer:AddChild(btn_node_1)
+    self.ui_layer:AddChild(btn_node_2)
     self.btn_node_1 = btn_node_1
+    self.btn_node_2 = btn_node_2
     self.icon = self.btn_node_1.graphics:Get("icon") --[[@as SpriteDrawable]]
 end
 
@@ -98,6 +128,7 @@ end
 local k = 1
 
 MainMenuScene.Update = function(self, dt)
+    self:HandleInput(dt)
     self.layers:Update(dt)
 
     if self.btn_node_1.sx <= (3 * k) then
