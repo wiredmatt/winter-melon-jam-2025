@@ -71,8 +71,7 @@ MainMenuScene.Update = function(self, dt)
     SceneGraph.Update(dt)
 
     if self.btn_node_1.sx <= 3 then
-        self.btn_node_1.sx = self.btn_node_1.sx + 1 * dt
-        self.btn_node_1.sy = self.btn_node_1.sy + 1 * dt
+        self.btn_node_1:SetScale(self.btn_node_1.sx + 1 * dt)
     end
 
     self.btn_node_1.graphics._layers[2].r = self.btn_node_1.graphics._layers[2].r + math.rad(1)

@@ -12,10 +12,25 @@
 ---@field visible boolean?
 
 ---@class BaseNode : BaseNodeConfig
+---@field x number
+---@field y number
+---@field r number
+---@field sx number
+---@field sy number
+---@field ox number
+---@field oy number
+---@field width number
+---@field height number
 ---@field parent BaseNode?
 ---@field children BaseNode[]
 ---@field plugins { [table]: boolean }
 ---@field graphics NodeGraphics
+---@field _transform_dirty boolean
+---@field _cached_wx number
+---@field _cached_wy number
+---@field _cached_wr number
+---@field _cached_wsx number
+---@field _cached_wsy number
 local BaseNode = {}
 BaseNode.__index = BaseNode
 
@@ -40,6 +55,14 @@ BaseNode.New = function(config)
     self.visible = self.visible or true
     self.plugins = {}
 
+    -- transform cache (dirty by default, computed on first GetWorldTransform)
+    self._transform_dirty = true
+    self._cached_wx = 0
+    self._cached_wy = 0
+    self._cached_wr = 0
+    self._cached_wsx = 1
+    self._cached_wsy = 1
+
     return self --[[@as BaseNode]]
 end
 
@@ -51,6 +74,7 @@ BaseNode.AddChild = function(self, child)
 
     table.insert(self.children, child)
     child.parent = self
+    child:MarkTransformDirty()
 end
 
 ---@param child BaseNode
@@ -60,32 +84,145 @@ BaseNode.RemoveChild = function(self, child)
         if c == child then
             table.remove(self.children, i)
             child.parent = nil
+            child:MarkTransformDirty()
             return true
         end
     end
     return false
 end
 
+--- marks this node and all descendants as needing transform recalculation.
+BaseNode.MarkTransformDirty = function(self)
+    if self._transform_dirty then
+        return -- already dirty, children must be dirty too
+    end
+    self._transform_dirty = true
+    for _, child in ipairs(self.children) do
+        child:MarkTransformDirty()
+    end
+end
+
+---@param x number
+---@param y number
+BaseNode.SetPosition = function(self, x, y)
+    if self.x ~= x or self.y ~= y then
+        self.x = x
+        self.y = y
+        self:MarkTransformDirty()
+    end
+end
+
+---@param x number
+BaseNode.SetX = function(self, x)
+    if self.x ~= x then
+        self.x = x
+        self:MarkTransformDirty()
+    end
+end
+
+---@param y number
+BaseNode.SetY = function(self, y)
+    if self.y ~= y then
+        self.y = y
+        self:MarkTransformDirty()
+    end
+end
+
+---@param r number
+BaseNode.SetRotation = function(self, r)
+    if self.r ~= r then
+        self.r = r
+        self:MarkTransformDirty()
+    end
+end
+
+---@param sx number
+---@param sy number?
+BaseNode.SetScale = function(self, sx, sy)
+    sy = sy or sx
+    if self.sx ~= sx or self.sy ~= sy then
+        self.sx = sx
+        self.sy = sy
+        self:MarkTransformDirty()
+    end
+end
+
+---@param sx number
+BaseNode.SetSX = function(self, sx)
+    if self.sx ~= sx then
+        self.sx = sx
+        self:MarkTransformDirty()
+    end
+end
+
+---@param sy number
+BaseNode.SetSY = function(self, sy)
+    if self.sy ~= sy then
+        self.sy = sy
+        self:MarkTransformDirty()
+    end
+end
+
+---@param ox number
+---@param oy number
+BaseNode.SetOrigin = function(self, ox, oy)
+    if self.ox ~= ox or self.oy ~= oy then
+        self.ox = ox
+        self.oy = oy
+        self:MarkTransformDirty()
+    end
+end
+
+---@param ox number
+BaseNode.SetOX = function(self, ox, oy)
+    if self.ox ~= ox then
+        self.ox = ox
+        self:MarkTransformDirty()
+    end
+end
+
+---@param oy number
+BaseNode.SetOY = function(self, oy)
+    if self.oy ~= oy then
+        self.oy = oy
+        self:MarkTransformDirty()
+    end
+end
+
 ---@return number x, number y, number r, number sx, number sy
 BaseNode.GetWorldTransform = function(self)
-    if not self.parent then
-        return self.x, self.y, self.r, self.sx, self.sy
+    if not self._transform_dirty then
+        return self._cached_wx, self._cached_wy, self._cached_wr, self._cached_wsx, self._cached_wsy
     end
 
-    local px, py, pr, psx, psy = self.parent:GetWorldTransform()
+    local wx, wy, wr, wsx, wsy = 0, 0, 0, 1, 1
 
-    -- apply parent rotation to local position
-    local cos_r = math.cos(pr)
-    local sin_r = math.sin(pr)
-    local rx = self.x * cos_r - self.y * sin_r
-    local ry = self.x * sin_r + self.y * cos_r
+    if not self.parent then
+        wx, wy, wr, wsx, wsy = self.x, self.y, self.r, self.sx, self.sy
+    else
+        local px, py, pr, psx, psy = self.parent:GetWorldTransform()
 
-    -- accumulate transforms
-    local wx = px + rx * psx
-    local wy = py + ry * psy
-    local wr = pr + self.r
-    local wsx = psx * self.sx
-    local wsy = psy * self.sy
+        -- apply parent rotation to local position
+        local cos_r = math.cos(pr)
+        local sin_r = math.sin(pr)
+        local rx = self.x * cos_r - self.y * sin_r
+        local ry = self.x * sin_r + self.y * cos_r
+
+        -- accumulate transforms
+        wx = px + rx * psx
+        wy = py + ry * psy
+        wr = pr + self.r
+        wsx = psx * self.sx
+        wsy = psy * self.sy
+    end
+
+    -- Cache the computed values
+    self._cached_wx = wx
+    self._cached_wy = wy
+    self._cached_wr = wr
+    self._cached_wsx = wsx
+    self._cached_wsy = wsy
+    self._transform_dirty = false
 
     return wx, wy, wr, wsx, wsy
 end
