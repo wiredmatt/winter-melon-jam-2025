@@ -1,5 +1,6 @@
 local inputmap = require("src.scenes.MainMenu.inputmap")
 local SceneGraph = require("lib.SceneGraph")
+local CHARACTERS = require("data.characters")
 
 local SoundPoolPicker = require("lib.SoundPoolPicker")
 
@@ -24,40 +25,42 @@ MainMenuScene.Enter = function(self)
 
     self.root_node = SceneGraph.Nodes.BaseNode.New()
 
+    -- todo: make ox and oy work with 0.0 - 1.0? or just use anchors instead
     local btn_node_1 = SceneGraph.Nodes.BaseNode.New({
-        x = 0,
-        y = 0,
+        x = 60,
+        y = 60,
         width = 32,
-        height = 32
+        height = 32,
+        ox = 32/2,
+        oy = 32/2
     })
-    SceneGraph.Graphics.On(btn_node_1).Add(
-        SceneGraph.Graphics.Rect.New({
-            color = { 100/255, 149/255, 237/255, 1},
-            mode = "fill",
-        })
+    local _,_, pw, ph = CHARACTERS.Player.sprite_quad:getViewport()
+    CHARACTERS.Player.sprite_image:setFilter("nearest")
+
+    SceneGraph.Graphics.On(btn_node_1)
+        .Add(
+            SceneGraph.Graphics.Rect.New({
+                color = { 100/255, 149/255, 237/255, 1},
+                mode = "line",
+            }))
+        .Add(
+            SceneGraph.Graphics.Sprite.New(
+                CHARACTERS.Player.sprite_image,
+                CHARACTERS.Player.sprite_quad,
+                {
+                    x = pw/2,
+                    y = ph/2,
+                    r = math.rad(90),
+                    ox = pw/2,
+                    oy = ph/2
+                })
     )
     SceneGraph.Plugins.MouseInput.InstallTo(btn_node_1).OnMouseDown(function (_, x, y, btn)
         print("btn1", x, y, btn)
     end)
 
-    local btn_node_2 = SceneGraph.Nodes.BaseNode.New({
-        x = 60,
-        y = 0,
-        width = 32,
-        height = 32
-    })
-    SceneGraph.Graphics.On(btn_node_2).Add(
-        require("lib.SceneGraph.Graphics.Rect").New({
-            color = { 100/255, 149/255, 237/255, 1},
-            mode = "line",
-        })
-    )
-    SceneGraph.Plugins.MouseInput.InstallTo(btn_node_2).OnMouseDown(function (_, x, y, btn)
-        print("btn2", x, y, btn)
-    end)
-
     self.root_node:AddChild(btn_node_1)
-    self.root_node:AddChild(btn_node_2)
+    self.btn_node_1 = btn_node_1
 end
 
 MainMenuScene.HandleInput = function(self, dt)
@@ -66,6 +69,13 @@ end
 MainMenuScene.Update = function(self, dt)
     self.root_node:Update(dt)
     SceneGraph.Update(dt)
+
+    if self.btn_node_1.sx <= 3 then
+        self.btn_node_1.sx = self.btn_node_1.sx + 1 * dt
+        self.btn_node_1.sy = self.btn_node_1.sy + 1 * dt
+    end
+
+    self.btn_node_1.graphics._layers[2].r = self.btn_node_1.graphics._layers[2].r + math.rad(1)
 end
 
 MainMenuScene.Draw = function(self)

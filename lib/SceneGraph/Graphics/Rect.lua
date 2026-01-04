@@ -6,12 +6,14 @@
 ---@field r number
 ---@field sx number
 ---@field sy number
+---@field ox number
+---@field oy number
 ---@field color number[]
 ---@field mode love.DrawMode
 ---@field _node BaseNode?
 local Rect = {}
 
----@param opts { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, color: number[]?, mode: love.DrawMode? }?
+---@param opts { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: number[]?, mode: love.DrawMode? }?
 ---@return RectDrawable
 function Rect.New(opts)
     opts = opts or {}
@@ -25,6 +27,8 @@ function Rect.New(opts)
         r = opts.r or 0,
         sx = opts.sx or 1,
         sy = opts.sy or 1,
+        ox = opts.ox or 0,
+        oy = opts.oy or 0,
 
         color = opts.color or {1, 1, 1, 1},
         mode = opts.mode or "fill",
@@ -43,7 +47,7 @@ function Rect.New(opts)
         love.graphics.scale(self.sx, self.sy)
 
         love.graphics.setColor(self.color)
-        love.graphics.rectangle(self.mode, 0, 0, w, h)
+        love.graphics.rectangle(self.mode, -self.ox, -self.oy, w, h)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.pop()

@@ -4,6 +4,8 @@
 ---@field r number?
 ---@field sx number?
 ---@field sy number?
+---@field ox number?
+---@field oy number?
 ---@field width number?
 ---@field height number?
 ---@field enabled boolean?
@@ -27,6 +29,8 @@ BaseNode.New = function(config)
     self.r = self.r or 0
     self.sx = self.sx or 1
     self.sy = self.sy or 1
+    self.ox = self.ox or 0
+    self.oy = self.oy or 0
     self.width = self.width or 0
     self.height = self.height or 0
 
@@ -93,6 +97,10 @@ BaseNode.Draw = function(self)
     love.graphics.translate(self.x, self.y)
     love.graphics.rotate(self.r)
     love.graphics.scale(self.sx, self.sy)
+
+    if self.ox ~= 0 or self.oy ~= 0 then
+        love.graphics.translate(-self.ox, -self.oy)
+    end
 
     -- draw graphics layers
     if self.graphics then
