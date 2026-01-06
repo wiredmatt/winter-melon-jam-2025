@@ -204,6 +204,38 @@ BaseNode.SetOY = function(self, oy)
     end
 end
 
+---@param w number
+BaseNode.SetWidth = function(self, w)
+    if self.width ~= w then
+        self.width = w
+        if self._on_size_changed then
+            self:_on_size_changed()
+        end
+    end
+end
+
+---@param h number
+BaseNode.SetHeight = function(self, h)
+    if self.height ~= h then
+        self.height = h
+        if self._on_size_changed then
+            self:_on_size_changed()
+        end
+    end
+end
+
+---@param w number
+---@param h number
+BaseNode.SetSize = function(self, w, h)
+    if self.width ~= w or self.height ~= h then
+        self.width = w
+        self.height = h
+        if self._on_size_changed then
+            self:_on_size_changed()
+        end
+    end
+end
+
 ---@return number x, number y, number r, number sx, number sy
 BaseNode.GetWorldTransform = function(self)
     if not self._transform_dirty then

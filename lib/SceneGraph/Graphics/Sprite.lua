@@ -4,6 +4,7 @@
 ---@field width number
 ---@field height number
 local Sprite = {}
+Sprite.__index = Sprite
 
 ---@param image love.Image
 ---@param quad love.Quad?
@@ -38,19 +39,19 @@ function Sprite.New(image, quad, opts)
         _node = nil,
     }
 
-    function self:Draw()
-        love.graphics.setColor(self.color)
+    return setmetatable(self, Sprite)
+end
 
-        if self.quad then
-            love.graphics.draw(self.image, self.quad, self.x, self.y, self.r, self.sx, self.sy, self.ox, self.oy)
-        else
-            love.graphics.draw(self.image, self.x, self.y, self.r, self.sx, self.sy, self.ox, self.oy)
-        end
+Sprite.Draw = function (self)
+    love.graphics.setColor(self.color)
 
-        love.graphics.setColor(1, 1, 1, 1)
+    if self.quad then
+        love.graphics.draw(self.image, self.quad, self.x, self.y, self.r, self.sx, self.sy, self.ox, self.oy)
+    else
+        love.graphics.draw(self.image, self.x, self.y, self.r, self.sx, self.sy, self.ox, self.oy)
     end
 
-    return self
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 return Sprite

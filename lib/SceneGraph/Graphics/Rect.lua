@@ -1,6 +1,7 @@
 ---@class RectDrawable : Drawable
 ---@field mode love.DrawMode
 local Rect = {}
+Rect.__index = Rect
 
 ---@param opts { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: number[]?, mode: love.DrawMode? }?
 ---@return RectDrawable

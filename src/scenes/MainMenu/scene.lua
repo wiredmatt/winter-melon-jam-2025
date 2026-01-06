@@ -38,6 +38,10 @@ MainMenuScene.Enter = function(self)
         height = 30
     })
 
+    SceneGraph.Plugins.Layout.InstallTo(play_button)
+        .SetMode("anchor")
+        .SetPadding(8)
+
     SceneGraph.Graphics.On(play_button)
         :Add(SceneGraph.Graphics.Rect.New({
             color = { 100/255, 149/255, 237/255, 1},
@@ -47,28 +51,37 @@ MainMenuScene.Enter = function(self)
             color = { 100/255, 149/255, 237/255, 1},
             mode = "line",
         }), "border")
+
+    local text_node = SceneGraph.Nodes.BaseNode.New()
+    SceneGraph.Graphics.On(text_node)
         :Add(SceneGraph.Graphics.Text.New({
             text = "Play",
             font = f,
-            x = 0,
-            y = 0,
             color = {1, 1, 1, 1},
-            align = "center",
-            valign = "middle",
-            shadow = { x = 2, y = 2, color = {0, 0, 0, 0.5} },
+            shadow = { x = 1, y = 1, color = {0, 0, 0, 0.5} },
         }), "label")
+
+    SceneGraph.Plugins.Layout.Configure(text_node)
+        .SetAnchor("center")
+
+    -- Set text node size from the text drawable
+    local text_graphic = (text_node.graphics:Get("label") --[[@as TextDrawable]]); if text_graphic == nil then error() end
+    text_node.width = text_graphic:GetWidth()
+    text_node.height = text_graphic:GetHeight()
+
+    play_button:AddChild(text_node)
+
     SceneGraph.Plugins.Input.InstallTo(play_button)
         .OnActivate(function(_, x, y, btn)
             SceneManager.SwitchTo(Scenes.Gameplay)
         end)
         .OnFocus(function(_)
-            print("[btn_node_1] focused!")
         end)
         .OnHover(function (_)
-            print("[btn_node_1] hovering")
+        end)
+        .OnHoverEnd(function (_)
         end)
         .OnBlur(function(_)
-            print("[btn_node_1] blurred!")
         end)
 
     self.ui_layer:AddChild(play_button)
@@ -91,8 +104,6 @@ MainMenuScene.HandleInput = function(self, _dt)
         SceneGraph.Plugins.Input.Confirm()
     end
 end
-
-local k = 1
 
 MainMenuScene.Update = function(self, dt)
     self:HandleInput(dt)
