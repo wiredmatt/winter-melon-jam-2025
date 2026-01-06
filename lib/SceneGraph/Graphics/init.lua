@@ -20,7 +20,8 @@
 
 local Graphics = {
     Rect = require("lib.SceneGraph.Graphics.Rect"),
-    Sprite = require("lib.SceneGraph.Graphics.Sprite")
+    Sprite = require("lib.SceneGraph.Graphics.Sprite"),
+    Text = require("lib.SceneGraph.Graphics.Text"),
 }
 
 ---@param node BaseNode
