@@ -96,6 +96,10 @@ InputManager.get_action = function (map_name, action_name)
     return action
 end
 
+InputManager.UnsetActiveMap = function ()
+    InputManager.active_map = nil
+end
+
 ---@param map_name string
 InputManager.SetActiveMap = function (map_name)
     InputManager.active_map = InputManager.get_map(map_name)

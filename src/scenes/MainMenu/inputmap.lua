@@ -13,7 +13,8 @@ local bindings = {
         ---@type love.KeyConstant[]
         keyboard = {"return", "space"},
         ---@type love.GamepadButton[]
-        gamepad = {"a"}
+        gamepad = {"a"},
+        mouse = { 1 }
     },
     [actions.UP] = {
         ---@type love.KeyConstant[]
