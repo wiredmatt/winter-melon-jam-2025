@@ -57,7 +57,7 @@ function Text.New(opts)
         width = 0,
         height = 0,
 
-        ---@type BaseNode?
+        ---@type Node?
         _node = nil,
         _cached_text = nil,
         _cached_font = nil,

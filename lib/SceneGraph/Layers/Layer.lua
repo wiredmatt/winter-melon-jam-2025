@@ -1,17 +1,17 @@
-local BaseNode = require("lib.SceneGraph.Nodes.BaseNode")
+local Node = require("lib.SceneGraph.Node")
 
 ---@class LayerConfig
 ---@field name string?
 ---@field render_order number?
----@field camera BaseNode?
+---@field camera Node?
 ---@field visible boolean?
 ---@field interactive boolean?
 
 ---@class Layer
 ---@field name string
 ---@field render_order number
----@field root BaseNode
----@field camera BaseNode?
+---@field root Node
+---@field camera Node?
 ---@field visible boolean
 ---@field interactive boolean
 local Layer = {}
@@ -31,14 +31,14 @@ Layer.New = function(config)
     self.interactive = config.interactive ~= false  -- default true
 
     -- Create root node for this layer
-    self.root = BaseNode.New()
+    self.root = Node.New()
     self.root._layer = self
 
     return self
 end
 
 --- Sets the layer reference on a node and all its descendants
----@param node BaseNode
+---@param node Node
 local function SetLayerRecursive(node, layer)
     node._layer = layer
     for _, child in ipairs(node.children) do
@@ -47,14 +47,14 @@ local function SetLayerRecursive(node, layer)
 end
 
 --- Add a child node to this layer
----@param node BaseNode
+---@param node Node
 Layer.AddChild = function(self, node)
     SetLayerRecursive(node, self)
     self.root:AddChild(node)
 end
 
 --- Remove a child node from this layer
----@param node BaseNode
+---@param node Node
 ---@return boolean
 Layer.RemoveChild = function(self, node)
     local removed = self.root:RemoveChild(node)

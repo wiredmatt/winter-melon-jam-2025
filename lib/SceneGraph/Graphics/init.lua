@@ -7,7 +7,7 @@
 ---@field ox number
 ---@field oy number
 ---@field color number[]
----@field _node BaseNode
+---@field _node Node
 ---@field Draw fun(self)
 
 ---@class NodeGraphics
@@ -24,7 +24,7 @@ local Graphics = {
     Text = require("lib.SceneGraph.Graphics.Text"),
 }
 
----@param node BaseNode
+---@param node Node
 ---@return NodeGraphics
 function Graphics.On(node)
     if node.graphics then
@@ -34,7 +34,7 @@ function Graphics.On(node)
     local graphics = {
         drawables = {},  ---@type Drawable[]
         _named = {},     ---@type { [string]: Drawable }
-        _node = node,    ---@type BaseNode
+        _node = node,    ---@type Node
     }
 
     ---@param drawable Drawable

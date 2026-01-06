@@ -23,7 +23,7 @@ function Rect.New(opts)
         color = opts.color or {1, 1, 1, 1},
         mode = opts.mode or "fill",
 
-        ---@type BaseNode?
+        ---@type Node?
         _node = nil,
     }
 

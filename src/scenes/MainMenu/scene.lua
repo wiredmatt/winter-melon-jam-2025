@@ -31,7 +31,7 @@ MainMenuScene.Enter = function(self)
     })
     self.layers:Add(self.ui_layer)
 
-    local play_button = SceneGraph.Nodes.BaseNode.New({
+    local play_button = SceneGraph.Node.New({
         x = 110,
         y = 60,
         width = 100,
@@ -54,7 +54,7 @@ MainMenuScene.Enter = function(self)
             mode = "line",
         }), "border")
 
-    local text_node = SceneGraph.Nodes.BaseNode.New()
+    local text_node = SceneGraph.Node.New()
     SceneGraph.Graphics.On(text_node)
         :Add(SceneGraph.Graphics.Text.New({
             text = "Play",

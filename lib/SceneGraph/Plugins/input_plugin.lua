@@ -1,13 +1,13 @@
 ---@class InputPlugin : Plugin
 ---@field private _mouseprovider MouseInputSource
----@field private _nodes { [BaseNode]: true }
----@field private _focused BaseNode?
----@field private _hovered BaseNode?
----@field private _pressed { [1|2|3]: BaseNode? }
+---@field private _nodes { [Node]: true }
+---@field private _focused Node?
+---@field private _hovered Node?
+---@field private _pressed { [1|2|3]: Node? }
 ---@field private _dirty boolean
 ---@field private _sorted_layers Layer[]
----@field private _layer_nodes { [Layer]: BaseNode[] }
----@field private _no_layer_nodes BaseNode[]
+---@field private _layer_nodes { [Layer]: Node[] }
+---@field private _no_layer_nodes Node[]
 local InputPlugin = {
     name = "InputPlugin",
     _nodes = {},
@@ -20,11 +20,11 @@ local InputPlugin = {
     _no_layer_nodes = {},
 }
 
----@param node BaseNode
+---@param node Node
 ---@return integer[]
 local function GetTreePath(node)
     local path = {}
-    ---@type BaseNode?
+    ---@type Node?
     local current = node
 
     while current do
@@ -43,8 +43,8 @@ local function GetTreePath(node)
     return path
 end
 
----@param a BaseNode
----@param b BaseNode
+---@param a Node
+---@param b Node
 ---@return boolean
 local function CompareByTreeOrder(a, b)
     local path_a = GetTreePath(a)
@@ -63,7 +63,7 @@ end
 --- transform screen coordinates to world coordinates using inverse camera transform
 ---@param screenx number
 ---@param screeny number
----@param camera BaseNode?
+---@param camera Node?
 ---@return number wx, number wy
 local function ScreenToWorld(screenx, screeny, camera)
     if not camera then
@@ -87,7 +87,7 @@ local function ScreenToWorld(screenx, screeny, camera)
 end
 
 --- get the center position of a node in world coordinates
----@param node BaseNode
+---@param node Node
 ---@return number x, number y
 local function GetNodeCenter(node)
     local wx, wy, wr, wsx, wsy = node:GetWorldTransform()
@@ -107,9 +107,9 @@ local function GetNodeCenter(node)
 end
 
 --- find the best node in a direction using spatial navigation
----@param from BaseNode
+---@param from Node
 ---@param direction "up"|"down"|"left"|"right"
----@return BaseNode?
+---@return Node?
 local function FindNodeInDirection(from, direction)
     local from_x, from_y = GetNodeCenter(from)
     local from_layer = from._layer
@@ -224,7 +224,7 @@ end
 --- find the topmost node under the mouse
 ---@param mx number
 ---@param my number
----@return BaseNode?
+---@return Node?
 local function FindHitTarget(mx, my)
     for _, layer in ipairs(InputPlugin._sorted_layers) do
         if layer.interactive then
@@ -254,7 +254,7 @@ local function FindHitTarget(mx, my)
 end
 
 --- set focus to a node, firing OnBlur/OnFocus events
----@param node BaseNode?
+---@param node Node?
 local function SetFocusInternal(node)
     local prev = InputPlugin._focused
     if prev == node then return end
@@ -270,7 +270,7 @@ local function SetFocusInternal(node)
     end
 end
 
----@param node BaseNode
+---@param node Node
 ---@return InputBuilder
 InputPlugin.InstallTo = function(node)
     if node.plugins[InputPlugin] == nil then
@@ -285,29 +285,29 @@ InputPlugin.InstallTo = function(node)
         end
     end
 
-    ---@class BaseNode
-    ---@field OnActivate fun(self: BaseNode): boolean?
-    ---@field OnFocus fun(self: BaseNode): boolean?
-    ---@field OnBlur fun(self: BaseNode): boolean?
-    ---@field OnCancel fun(self: BaseNode): boolean?
-    ---@field OnHover fun(self: BaseNode, x: number, y: number): boolean?
-    ---@field OnHoverEnd fun(self: BaseNode): boolean?
-    ---@field OnPress fun(self: BaseNode, x: number, y: number, btn: integer): boolean?
-    ---@field OnRelease fun(self: BaseNode, x: number, y: number, btn: integer): boolean?
-    ---@field focus_up BaseNode?
-    ---@field focus_down BaseNode?
-    ---@field focus_left BaseNode?
-    ---@field focus_right BaseNode?
+    ---@class Node
+    ---@field OnActivate fun(self: Node): boolean?
+    ---@field OnFocus fun(self: Node): boolean?
+    ---@field OnBlur fun(self: Node): boolean?
+    ---@field OnCancel fun(self: Node): boolean?
+    ---@field OnHover fun(self: Node, x: number, y: number): boolean?
+    ---@field OnHoverEnd fun(self: Node): boolean?
+    ---@field OnPress fun(self: Node, x: number, y: number, btn: integer): boolean?
+    ---@field OnRelease fun(self: Node, x: number, y: number, btn: integer): boolean?
+    ---@field focus_up Node?
+    ---@field focus_down Node?
+    ---@field focus_left Node?
+    ---@field focus_right Node?
 
     ---@class InputBuilder
-    ---@field OnActivate fun(callback: fun(self: BaseNode): boolean?): InputBuilder
-    ---@field OnFocus fun(callback: fun(self: BaseNode): boolean?): InputBuilder
-    ---@field OnBlur fun(callback: fun(self: BaseNode): boolean?): InputBuilder
-    ---@field OnCancel fun(callback: fun(self: BaseNode): boolean?): InputBuilder
-    ---@field OnHover fun(callback: fun(self: BaseNode, x: number, y: number): boolean?): InputBuilder
-    ---@field OnHoverEnd fun(callback: fun(self: BaseNode): boolean?): InputBuilder
-    ---@field OnPress fun(callback: fun(self: BaseNode, x: number, y: number, btn: integer): boolean?): InputBuilder
-    ---@field OnRelease fun(callback: fun(self: BaseNode, x: number, y: number, btn: integer): boolean?): InputBuilder
+    ---@field OnActivate fun(callback: fun(self: Node): boolean?): InputBuilder
+    ---@field OnFocus fun(callback: fun(self: Node): boolean?): InputBuilder
+    ---@field OnBlur fun(callback: fun(self: Node): boolean?): InputBuilder
+    ---@field OnCancel fun(callback: fun(self: Node): boolean?): InputBuilder
+    ---@field OnHover fun(callback: fun(self: Node, x: number, y: number): boolean?): InputBuilder
+    ---@field OnHoverEnd fun(callback: fun(self: Node): boolean?): InputBuilder
+    ---@field OnPress fun(callback: fun(self: Node, x: number, y: number, btn: integer): boolean?): InputBuilder
+    ---@field OnRelease fun(callback: fun(self: Node, x: number, y: number, btn: integer): boolean?): InputBuilder
 
     ---@type InputBuilder
     local builder
@@ -349,7 +349,7 @@ InputPlugin.InstallTo = function(node)
     return builder
 end
 
----@param node BaseNode
+---@param node Node
 InputPlugin.UninstallFrom = function(node)
     node.plugins[InputPlugin] = nil
     InputPlugin._nodes[node] = nil
@@ -453,12 +453,12 @@ InputPlugin.Cancel = function()
     end
 end
 
----@param node BaseNode?
+---@param node Node?
 InputPlugin.SetFocus = function(node)
     SetFocusInternal(node)
 end
 
----@return BaseNode?
+---@return Node?
 InputPlugin.GetFocused = function()
     return InputPlugin._focused
 end
@@ -467,7 +467,7 @@ InputPlugin.ClearFocus = function()
     SetFocusInternal(nil)
 end
 
----@return BaseNode?
+---@return Node?
 InputPlugin.GetHovered = function()
     return InputPlugin._hovered
 end

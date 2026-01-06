@@ -1,4 +1,4 @@
----@class BaseNodeConfig
+---@class NodeConfig
 ---@field x number?
 ---@field y number?
 ---@field r number?
@@ -11,7 +11,7 @@
 ---@field enabled boolean?
 ---@field visible boolean?
 
----@class BaseNode : BaseNodeConfig
+---@class Node : NodeConfig
 ---@field x number
 ---@field y number
 ---@field r number
@@ -21,8 +21,8 @@
 ---@field oy number
 ---@field width number
 ---@field height number
----@field parent BaseNode?
----@field children BaseNode[]
+---@field parent Node?
+---@field children Node[]
 ---@field plugins { [table]: boolean }
 ---@field graphics NodeGraphics
 ---@field _transform_dirty boolean
@@ -32,13 +32,13 @@
 ---@field _cached_wsx number
 ---@field _cached_wsy number
 ---@field _layer Layer?
-local BaseNode = {}
-BaseNode.__index = BaseNode
+local Node = {}
+Node.__index = Node
 
----@param config BaseNodeConfig?
-BaseNode.New = function(config)
+---@param config NodeConfig?
+Node.New = function(config)
     config = config or {}
-    local self = setmetatable(config, BaseNode)
+    local self = setmetatable(config, Node)
 
     self.x = self.x or 0
     self.y = self.y or 0
@@ -64,11 +64,11 @@ BaseNode.New = function(config)
     self._cached_wsx = 1
     self._cached_wsy = 1
 
-    return self --[[@as BaseNode]]
+    return self --[[@as Node]]
 end
 
----@param child BaseNode
-BaseNode.AddChild = function(self, child)
+---@param child Node
+Node.AddChild = function(self, child)
     if child.parent then
         child.parent:RemoveChild(child)
     end
@@ -83,9 +83,9 @@ BaseNode.AddChild = function(self, child)
     end
 end
 
----@param child BaseNode
+---@param child Node
 ---@return boolean
-BaseNode.RemoveChild = function(self, child)
+Node.RemoveChild = function(self, child)
     for i, c in ipairs(self.children) do
         if c == child then
             table.remove(self.children, i)
@@ -98,7 +98,7 @@ BaseNode.RemoveChild = function(self, child)
 end
 
 --- marks this node and all descendants as needing transform recalculation.
-BaseNode.MarkTransformDirty = function(self)
+Node.MarkTransformDirty = function(self)
     if self._transform_dirty then
         return -- already dirty, children must be dirty too
     end
@@ -110,7 +110,7 @@ end
 
 --- Sets the layer reference on this node and all descendants
 ---@param layer Layer?
-BaseNode.SetLayerRecursive = function(self, layer)
+Node.SetLayerRecursive = function(self, layer)
     self._layer = layer
     for _, child in ipairs(self.children) do
         child:SetLayerRecursive(layer)
@@ -119,7 +119,7 @@ end
 
 ---@param x number
 ---@param y number
-BaseNode.SetPosition = function(self, x, y)
+Node.SetPosition = function(self, x, y)
     if self.x ~= x or self.y ~= y then
         self.x = x
         self.y = y
@@ -128,7 +128,7 @@ BaseNode.SetPosition = function(self, x, y)
 end
 
 ---@param x number
-BaseNode.SetX = function(self, x)
+Node.SetX = function(self, x)
     if self.x ~= x then
         self.x = x
         self:MarkTransformDirty()
@@ -136,7 +136,7 @@ BaseNode.SetX = function(self, x)
 end
 
 ---@param y number
-BaseNode.SetY = function(self, y)
+Node.SetY = function(self, y)
     if self.y ~= y then
         self.y = y
         self:MarkTransformDirty()
@@ -144,7 +144,7 @@ BaseNode.SetY = function(self, y)
 end
 
 ---@param r number
-BaseNode.SetRotation = function(self, r)
+Node.SetRotation = function(self, r)
     if self.r ~= r then
         self.r = r
         self:MarkTransformDirty()
@@ -153,7 +153,7 @@ end
 
 ---@param sx number
 ---@param sy number?
-BaseNode.SetScale = function(self, sx, sy)
+Node.SetScale = function(self, sx, sy)
     sy = sy or sx
     if self.sx ~= sx or self.sy ~= sy then
         self.sx = sx
@@ -163,7 +163,7 @@ BaseNode.SetScale = function(self, sx, sy)
 end
 
 ---@param sx number
-BaseNode.SetSX = function(self, sx)
+Node.SetSX = function(self, sx)
     if self.sx ~= sx then
         self.sx = sx
         self:MarkTransformDirty()
@@ -171,7 +171,7 @@ BaseNode.SetSX = function(self, sx)
 end
 
 ---@param sy number
-BaseNode.SetSY = function(self, sy)
+Node.SetSY = function(self, sy)
     if self.sy ~= sy then
         self.sy = sy
         self:MarkTransformDirty()
@@ -180,7 +180,7 @@ end
 
 ---@param ox number
 ---@param oy number
-BaseNode.SetOrigin = function(self, ox, oy)
+Node.SetOrigin = function(self, ox, oy)
     if self.ox ~= ox or self.oy ~= oy then
         self.ox = ox
         self.oy = oy
@@ -189,7 +189,7 @@ BaseNode.SetOrigin = function(self, ox, oy)
 end
 
 ---@param ox number
-BaseNode.SetOX = function(self, ox)
+Node.SetOX = function(self, ox)
     if self.ox ~= ox then
         self.ox = ox
         self:MarkTransformDirty()
@@ -197,7 +197,7 @@ BaseNode.SetOX = function(self, ox)
 end
 
 ---@param oy number
-BaseNode.SetOY = function(self, oy)
+Node.SetOY = function(self, oy)
     if self.oy ~= oy then
         self.oy = oy
         self:MarkTransformDirty()
@@ -205,7 +205,7 @@ BaseNode.SetOY = function(self, oy)
 end
 
 ---@param w number
-BaseNode.SetWidth = function(self, w)
+Node.SetWidth = function(self, w)
     if self.width ~= w then
         self.width = w
         if self._on_size_changed then
@@ -215,7 +215,7 @@ BaseNode.SetWidth = function(self, w)
 end
 
 ---@param h number
-BaseNode.SetHeight = function(self, h)
+Node.SetHeight = function(self, h)
     if self.height ~= h then
         self.height = h
         if self._on_size_changed then
@@ -226,7 +226,7 @@ end
 
 ---@param w number
 ---@param h number
-BaseNode.SetSize = function(self, w, h)
+Node.SetSize = function(self, w, h)
     if self.width ~= w or self.height ~= h then
         self.width = w
         self.height = h
@@ -237,7 +237,7 @@ BaseNode.SetSize = function(self, w, h)
 end
 
 ---@return number x, number y, number r, number sx, number sy
-BaseNode.GetWorldTransform = function(self)
+Node.GetWorldTransform = function(self)
     if not self._transform_dirty then
         return self._cached_wx, self._cached_wy, self._cached_wr, self._cached_wsx, self._cached_wsy
     end
@@ -274,7 +274,7 @@ BaseNode.GetWorldTransform = function(self)
     return wx, wy, wr, wsx, wsy
 end
 
-BaseNode.Draw = function(self)
+Node.Draw = function(self)
     if not self.visible then return end
 
     love.graphics.push()
@@ -300,7 +300,7 @@ BaseNode.Draw = function(self)
 end
 
 ---@param dt number
-BaseNode.Update = function(self, dt)
+Node.Update = function(self, dt)
     -- override this method in subclasses
     -- ...
 
@@ -311,14 +311,14 @@ BaseNode.Update = function(self, dt)
 end
 
 ---@return number x, number y, number width, number height
-BaseNode.GetLocalBounds = function(self)
+Node.GetLocalBounds = function(self)
     return -self.ox, -self.oy, self.width, self.height
 end
 
 ---@param wx number world X coordinate
 ---@param wy number world Y coordinate
 ---@return number lx, number ly
-BaseNode.WorldToLocal = function(self, wx, wy)
+Node.WorldToLocal = function(self, wx, wy)
     local world_x, world_y, world_r, world_sx, world_sy = self:GetWorldTransform()
 
     local tx = wx - world_x
@@ -338,7 +338,7 @@ end
 ---@param wx number world X coordinate
 ---@param wy number world Y coordinate
 ---@return boolean
-BaseNode.ContainsPoint = function(self, wx, wy)
+Node.ContainsPoint = function(self, wx, wy)
     if not self.enabled then
         return false
     end
@@ -349,7 +349,7 @@ BaseNode.ContainsPoint = function(self, wx, wy)
     return lx >= bx and lx <= bx + bw and ly >= by and ly <= by + bh
 end
 
-BaseNode.Destroy = function(self)
+Node.Destroy = function(self)
     if self.parent then
         self.parent:RemoveChild(self)
     end
@@ -362,4 +362,4 @@ BaseNode.Destroy = function(self)
 end
 
 
-return BaseNode
+return Node

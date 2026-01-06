@@ -26,8 +26,8 @@
 ---@class LayoutPlugin
 local LayoutPlugin = {
     name = "Layout",
-    _nodes = {},           ---@type { [BaseNode]: boolean }
-    _dirty_nodes = {},     ---@type { [BaseNode]: boolean }
+    _nodes = {},           ---@type { [Node]: boolean }
+    _dirty_nodes = {},     ---@type { [Node]: boolean }
     _dirty = false,
 }
 
@@ -93,7 +93,7 @@ local function align_on_axis(child_size, align, available_space, padding_start)
     end
 end
 
----@param node BaseNode
+---@param node Node
 local function mark_layout_dirty(node)
     LayoutPlugin._dirty_nodes[node] = true
     LayoutPlugin._dirty = true
@@ -106,7 +106,7 @@ local function mark_layout_dirty(node)
     end
 end
 
----@param node BaseNode
+---@param node Node
 local function measure_node(node)
     local layout = node._layout
     if not layout then return end
@@ -179,7 +179,7 @@ local function measure_node(node)
     end
 end
 
----@param node BaseNode
+---@param node Node
 local function arrange_flex(node)
     local layout = node._layout
     local children = node.children
@@ -283,7 +283,7 @@ local function arrange_flex(node)
     end
 end
 
----@param node BaseNode
+---@param node Node
 local function arrange_anchor(node)
     local layout = node._layout
     local avail_w = node.width - layout.padding.left - layout.padding.right
@@ -329,7 +329,7 @@ local function arrange_anchor(node)
     end
 end
 
----@param node BaseNode
+---@param node Node
 local function layout_node(node)
     local layout = node._layout
     if not layout then return end
@@ -346,7 +346,7 @@ local function layout_node(node)
 end
 
 ---@class LayoutBuilder
----@field _node BaseNode
+---@field _node Node
 ---@field SetMode fun(mode: LayoutMode): LayoutBuilder
 ---@field SetDirection fun(direction: LayoutDirection): LayoutBuilder
 ---@field SetJustify fun(justify: LayoutJustify): LayoutBuilder
@@ -355,7 +355,7 @@ end
 ---@field SetPadding fun(top: number?, right: number?, bottom: number?, left: number?): LayoutBuilder
 ---@field SetSizing fun(width_sizing: LayoutSizing, height_sizing: LayoutSizing?): LayoutBuilder
 
----@param node BaseNode
+---@param node Node
 ---@return LayoutBuilder
 local function create_layout_builder(node)
     local builder = { _node = node }
@@ -439,14 +439,14 @@ local function create_layout_builder(node)
 end
 
 ---@class LayoutChildBuilder
----@field _node BaseNode
+---@field _node Node
 ---@field SetAnchor fun(anchor: LayoutAnchor): LayoutChildBuilder
 ---@field SetDock fun(dock: LayoutDock): LayoutChildBuilder
 ---@field SetGrow fun(grow: number): LayoutChildBuilder
 ---@field SetShrink fun(shrink: number): LayoutChildBuilder
 ---@field SetAlignSelf fun(align: LayoutAlign): LayoutChildBuilder
 
----@param node BaseNode
+---@param node Node
 ---@return LayoutChildBuilder
 local function create_child_builder(node)
     local builder = { _node = node }
@@ -496,14 +496,14 @@ local function create_child_builder(node)
     return builder
 end
 
----@param node BaseNode
+---@param node Node
 ---@return LayoutBuilder
 function LayoutPlugin.InstallTo(node)
     if node.plugins[LayoutPlugin] then
         return create_layout_builder(node)
     end
 
-    ---@class BaseNode
+    ---@class Node
     ---@field _layout LayoutConfig
     ---@field _layout_child LayoutChildConfig
     ---@field _on_size_changed fun(self): nil
@@ -556,7 +556,7 @@ function LayoutPlugin.InstallTo(node)
     return lb
 end
 
----@param node BaseNode
+---@param node Node
 ---@return LayoutChildBuilder
 function LayoutPlugin.Configure(node)
     if not node._layout_child then
@@ -567,7 +567,7 @@ function LayoutPlugin.Configure(node)
     return clb
 end
 
----@param node BaseNode
+---@param node Node
 function LayoutPlugin.UninstallFrom(node)
     if not node.plugins[LayoutPlugin] then
         return
@@ -586,7 +586,7 @@ function LayoutPlugin.UninstallFromAll()
 end
 
 -- manually trigger layout refresh for a node
----@param node BaseNode
+---@param node Node
 function LayoutPlugin.Refresh(node)
     if node._layout then
         mark_layout_dirty(node)
