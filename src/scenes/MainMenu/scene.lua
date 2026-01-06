@@ -35,7 +35,9 @@ MainMenuScene.Enter = function(self)
         x = 110,
         y = 60,
         width = 100,
-        height = 30
+        height = 30,
+        ox = 110/2,
+        oy = 60/2
     })
 
     SceneGraph.Plugins.Layout.InstallTo(play_button)
@@ -72,7 +74,10 @@ MainMenuScene.Enter = function(self)
     play_button:AddChild(text_node)
 
     SceneGraph.Plugins.Input.InstallTo(play_button)
-        .OnActivate(function(_, x, y, btn)
+        .OnPress(function (_, x, y, btn)
+            SceneManager.SwitchTo(Scenes.Gameplay)
+        end)
+        .OnActivate(function(_)
             SceneManager.SwitchTo(Scenes.Gameplay)
         end)
         .OnFocus(function(_)
@@ -101,7 +106,11 @@ MainMenuScene.HandleInput = function(self, _dt)
     end
 
     if InputManager.JustPressed(actions.CONFIRM) then
-        SceneGraph.Plugins.Input.Confirm()
+        if SceneGraph.Plugins.Input.GetFocused() == nil then
+            SceneGraph.Plugins.Input.SetFocus(self.ui_layer.root.children[1])
+        end
+
+        SceneGraph.Plugins.Input.Activate()
     end
 end
 

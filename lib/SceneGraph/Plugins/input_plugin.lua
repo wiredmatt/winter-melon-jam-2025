@@ -300,7 +300,7 @@ InputPlugin.InstallTo = function(node)
     ---@field focus_right BaseNode?
 
     ---@class InputBuilder
-    ---@field OnActivate fun(callback: fun(self: BaseNode, x: number?, y: number?, btn: integer?): boolean?): InputBuilder
+    ---@field OnActivate fun(callback: fun(self: BaseNode): boolean?): InputBuilder
     ---@field OnFocus fun(callback: fun(self: BaseNode): boolean?): InputBuilder
     ---@field OnBlur fun(callback: fun(self: BaseNode): boolean?): InputBuilder
     ---@field OnCancel fun(callback: fun(self: BaseNode): boolean?): InputBuilder
@@ -437,8 +437,8 @@ InputPlugin.Navigate = function(direction)
     end
 end
 
---- trigger confirm action on focused node
-InputPlugin.Confirm = function()
+--- trigger activate action on focused node
+InputPlugin.Activate = function()
     local focused = InputPlugin._focused
     if focused and focused.OnActivate then
         focused:OnActivate()
@@ -500,10 +500,6 @@ InputPlugin.Update = function(_dt)
             if pressed_node then
                 if pressed_node.OnRelease then
                     pressed_node:OnRelease(mx, my, btn)
-                end
-                -- fire OnActivate if released on the same node (click complete)
-                if pressed_node == target and pressed_node.OnActivate then
-                    pressed_node:OnActivate(mx, my, btn)
                 end
             end
             InputPlugin._pressed[btn] = nil

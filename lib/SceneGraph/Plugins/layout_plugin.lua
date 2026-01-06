@@ -347,6 +347,13 @@ end
 
 ---@class LayoutBuilder
 ---@field _node BaseNode
+---@field SetMode fun(mode: LayoutMode): LayoutBuilder
+---@field SetDirection fun(direction: LayoutDirection): LayoutBuilder
+---@field SetJustify fun(justify: LayoutJustify): LayoutBuilder
+---@field SetAlign fun(align: LayoutAlign): LayoutBuilder
+---@field SetGap fun(gap: number): LayoutBuilder
+---@field SetPadding fun(top: number?, right: number?, bottom: number?, left: number?): LayoutBuilder
+---@field SetSizing fun(width_sizing: LayoutSizing, height_sizing: LayoutSizing?): LayoutBuilder
 
 ---@param node BaseNode
 ---@return LayoutBuilder
@@ -433,6 +440,11 @@ end
 
 ---@class LayoutChildBuilder
 ---@field _node BaseNode
+---@field SetAnchor fun(anchor: LayoutAnchor): LayoutChildBuilder
+---@field SetDock fun(dock: LayoutDock): LayoutChildBuilder
+---@field SetGrow fun(grow: number): LayoutChildBuilder
+---@field SetShrink fun(shrink: number): LayoutChildBuilder
+---@field SetAlignSelf fun(align: LayoutAlign): LayoutChildBuilder
 
 ---@param node BaseNode
 ---@return LayoutChildBuilder
@@ -539,7 +551,9 @@ function LayoutPlugin.InstallTo(node)
     end
 
     mark_layout_dirty(node)
-    return create_layout_builder(node)
+    local lb = create_layout_builder(node)
+
+    return lb
 end
 
 ---@param node BaseNode
@@ -548,7 +562,9 @@ function LayoutPlugin.Configure(node)
     if not node._layout_child then
         node._layout_child = default_child_config()
     end
-    return create_child_builder(node)
+    local clb = create_child_builder(node)
+
+    return clb
 end
 
 ---@param node BaseNode
