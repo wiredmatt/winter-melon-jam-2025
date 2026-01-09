@@ -1,18 +1,14 @@
+-- Get mouse provider for UI input
+local mouse_provider = require("lib.InputManager.mouse")
+
 local SceneGraph = {
     Node = require("lib.SceneGraph.Node"),
-    Plugins = require("lib.SceneGraph.Plugins"),
-    Behaviors = require("lib.SceneGraph.Behaviors"),
-    Graphics = require("lib.SceneGraph.Graphics"),
+    Component = require("lib.SceneGraph.Component"),
+
+    InputPlugin = require("lib.SceneGraph.InputPlugin")(mouse_provider),
+
     Layer = require("lib.SceneGraph.Layers.Layer"),
     LayerManager = require("lib.SceneGraph.Layers.LayerManager"),
 }
-
-SceneGraph.PluginManager = {}
-
-SceneGraph.PluginManager.Update = function (dt)
-    for _, p in pairs(SceneGraph.Plugins) do
-        p.Update(dt)
-    end
-end
 
 return SceneGraph

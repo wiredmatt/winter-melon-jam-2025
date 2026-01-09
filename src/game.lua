@@ -20,7 +20,7 @@ Game.Draw = function (self)
 end
 
 Game.Update = function (self, dt)
-    SceneGraph.PluginManager.Update(dt)
+    SceneGraph.InputPlugin.Update(dt)
     SceneManager.Update(dt)
 end
 

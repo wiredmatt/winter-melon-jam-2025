@@ -1,3 +1,0 @@
-local Behaviors = {}
-
-return Behaviors

@@ -1,4 +1,9 @@
----@class InputPlugin : Plugin
+---@class MouseInputSource
+---@field GetPosition fun(): number, number
+---@field JustPressed fun(btn: integer): boolean
+---@field JustReleased fun(btn: integer): boolean
+
+---@class InputPlugin
 ---@field private _mouseprovider MouseInputSource
 ---@field private _nodes { [Node]: true }
 ---@field private _focused Node?
@@ -9,7 +14,6 @@
 ---@field private _layer_nodes { [Layer]: Node[] }
 ---@field private _no_layer_nodes Node[]
 local InputPlugin = {
-    name = "InputPlugin",
     _nodes = {},
     _focused = nil,
     _hovered = nil,
@@ -253,116 +257,33 @@ local function FindHitTarget(mx, my)
     return nil
 end
 
---- set focus to a node, firing OnBlur/OnFocus events
+--- set focus to a node, firing Blur/Focus events
 ---@param node Node?
 local function SetFocusInternal(node)
     local prev = InputPlugin._focused
     if prev == node then return end
 
-    if prev and prev.OnBlur then
-        prev:OnBlur()
+    if prev then
+        prev:Dispatch("Blur")
     end
 
     InputPlugin._focused = node
 
-    if node and node.OnFocus then
-        node:OnFocus()
+    if node then
+        node:Dispatch("Focus")
     end
 end
 
 ---@param node Node
----@return InputBuilder
-InputPlugin.InstallTo = function(node)
-    if node.plugins[InputPlugin] == nil then
-        node.plugins[InputPlugin] = true
-        InputPlugin._nodes[node] = true
-        InputPlugin._dirty = true
-
-        local __og_Destroy = node.Destroy
-        node.Destroy = function(...)
-            InputPlugin.UninstallFrom(node)
-            return __og_Destroy(...)
-        end
-    end
-
-    ---@class Node
-    ---@field OnActivate fun(self: Node): boolean?
-    ---@field OnFocus fun(self: Node): boolean?
-    ---@field OnBlur fun(self: Node): boolean?
-    ---@field OnCancel fun(self: Node): boolean?
-    ---@field OnHover fun(self: Node, x: number, y: number): boolean?
-    ---@field OnHoverEnd fun(self: Node): boolean?
-    ---@field OnPress fun(self: Node, x: number, y: number, btn: integer): boolean?
-    ---@field OnRelease fun(self: Node, x: number, y: number, btn: integer): boolean?
-    ---@field focus_up Node?
-    ---@field focus_down Node?
-    ---@field focus_left Node?
-    ---@field focus_right Node?
-
-    ---@class InputBuilder
-    ---@field OnActivate fun(callback: fun(self: Node): boolean?): InputBuilder
-    ---@field OnFocus fun(callback: fun(self: Node): boolean?): InputBuilder
-    ---@field OnBlur fun(callback: fun(self: Node): boolean?): InputBuilder
-    ---@field OnCancel fun(callback: fun(self: Node): boolean?): InputBuilder
-    ---@field OnHover fun(callback: fun(self: Node, x: number, y: number): boolean?): InputBuilder
-    ---@field OnHoverEnd fun(callback: fun(self: Node): boolean?): InputBuilder
-    ---@field OnPress fun(callback: fun(self: Node, x: number, y: number, btn: integer): boolean?): InputBuilder
-    ---@field OnRelease fun(callback: fun(self: Node, x: number, y: number, btn: integer): boolean?): InputBuilder
-
-    ---@type InputBuilder
-    local builder
-    builder = {
-        OnActivate = function(callback)
-            node.OnActivate = callback
-            return builder
-        end,
-        OnFocus = function(callback)
-            node.OnFocus = callback
-            return builder
-        end,
-        OnBlur = function(callback)
-            node.OnBlur = callback
-            return builder
-        end,
-        OnCancel = function(callback)
-            node.OnCancel = callback
-            return builder
-        end,
-        OnHover = function(callback)
-            node.OnHover = callback
-            return builder
-        end,
-        OnHoverEnd = function(callback)
-            node.OnHoverEnd = callback
-            return builder
-        end,
-        OnPress = function(callback)
-            node.OnPress = callback
-            return builder
-        end,
-        OnRelease = function(callback)
-            node.OnRelease = callback
-            return builder
-        end,
-    }
-
-    return builder
+InputPlugin.Register = function(node)
+    InputPlugin._nodes[node] = true
+    InputPlugin._dirty = true
 end
 
 ---@param node Node
-InputPlugin.UninstallFrom = function(node)
-    node.plugins[InputPlugin] = nil
+InputPlugin.Unregister = function(node)
     InputPlugin._nodes[node] = nil
     InputPlugin._dirty = true
-
-    node.OnActivate = nil
-    node.OnFocus = nil
-    node.OnBlur = nil
-    node.OnCancel = nil
-    node.OnHover = nil
-    node.OnHoverEnd = nil
-    node.OnPress = nil
-    node.OnRelease = nil
 
     if InputPlugin._focused == node then
         InputPlugin._focused = nil
@@ -377,33 +298,7 @@ InputPlugin.UninstallFrom = function(node)
     end
 end
 
-InputPlugin.UninstallFromAll = function()
-    for node in pairs(InputPlugin._nodes) do
-        node.plugins[InputPlugin] = nil
-        node.OnActivate = nil
-        node.OnFocus = nil
-        node.OnBlur = nil
-        node.OnCancel = nil
-        node.OnHover = nil
-        node.OnHoverEnd = nil
-        node.OnPress = nil
-        node.OnRelease = nil
-    end
-
-    InputPlugin._nodes = {}
-    InputPlugin._focused = nil
-    InputPlugin._hovered = nil
-    InputPlugin._pressed = {}
-    InputPlugin._sorted_layers = {}
-    InputPlugin._layer_nodes = {}
-    InputPlugin._no_layer_nodes = {}
-    InputPlugin._dirty = false
-end
-
-InputPlugin.MarkDirty = function()
-    InputPlugin._dirty = true
-end
-
+---Navigate focus in a direction
 ---@param direction "up"|"down"|"left"|"right"
 InputPlugin.Navigate = function(direction)
     if InputPlugin._dirty then
@@ -440,16 +335,16 @@ end
 --- trigger activate action on focused node
 InputPlugin.Activate = function()
     local focused = InputPlugin._focused
-    if focused and focused.OnActivate then
-        focused:OnActivate()
+    if focused then
+        focused:Dispatch("Activate")
     end
 end
 
 --- trigger cancel action on focused node
 InputPlugin.Cancel = function()
     local focused = InputPlugin._focused
-    if focused and focused.OnCancel then
-        focused:OnCancel()
+    if focused then
+        focused:Dispatch("Cancel")
     end
 end
 
@@ -472,7 +367,12 @@ InputPlugin.GetHovered = function()
     return InputPlugin._hovered
 end
 
-InputPlugin.Update = function(_dt)
+InputPlugin.MarkDirty = function()
+    InputPlugin._dirty = true
+end
+
+---@param dt number
+InputPlugin.Update = function(dt)
     local mx, my = InputPlugin._mouseprovider.GetPosition()
 
     if InputPlugin._dirty then
@@ -484,11 +384,11 @@ InputPlugin.Update = function(_dt)
     -- handle mouse hover
     local prev_hovered = InputPlugin._hovered
     if prev_hovered ~= target then
-        if prev_hovered and prev_hovered.OnHoverEnd then
-            prev_hovered:OnHoverEnd()
+        if prev_hovered then
+            prev_hovered:Dispatch("HoverEnd")
         end
-        if target and target.OnHover then
-            target:OnHover(mx, my)
+        if target then
+            target:Dispatch("Hover", mx, my)
         end
         InputPlugin._hovered = target
     end
@@ -498,9 +398,7 @@ InputPlugin.Update = function(_dt)
         if InputPlugin._mouseprovider.JustReleased(btn) then
             local pressed_node = InputPlugin._pressed[btn]
             if pressed_node then
-                if pressed_node.OnRelease then
-                    pressed_node:OnRelease(mx, my, btn)
-                end
+                pressed_node:Dispatch("Release", mx, my, btn)
             end
             InputPlugin._pressed[btn] = nil
         end
@@ -512,10 +410,7 @@ InputPlugin.Update = function(_dt)
             if target then
                 -- set focus when clicking
                 SetFocusInternal(target)
-
-                if target.OnPress then
-                    target:OnPress(mx, my, btn)
-                end
+                target:Dispatch("Press", mx, my, btn)
             end
             InputPlugin._pressed[btn] = target
         end

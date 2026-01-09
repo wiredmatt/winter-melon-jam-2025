@@ -13,8 +13,11 @@ _G.Settings = require("lib.Settings")
 _G.AudioManager = require("lib.AudioManager")
 _G.SceneManager = require("lib.SceneManager")
 _G.SceneGraph = require("lib.SceneGraph")
+_G.SceneGraph.Components = require("src.components")
 _G.Scenes = require("src.scenes.scenes")
 _G.SoundPoolPicker = require("lib.SoundPoolPicker")
+_G.WHITE = {1,1,1,1} --[[@as love.Color]]
+_G.Utils = require("src.utils")
 
 local Game = require("src.game")
 local Program = require("lib.Program")

@@ -11,15 +11,13 @@ local MainMenuScene = {
     -- }),
     transition_out = SceneManager.Transitions.FadeOut.New(),
     inputmap = inputmap,
-    ---@type SpriteDrawable
-    icon = nil
 }
 
 MainMenuScene.Enter = function(self)
     InputManager.DefineMap(self.name)
     InputManager.LoadBindings(self.name, self.inputmap.bindings)
     InputManager.SetActiveMap(self.name)
-    AudioManager.PlayMusic(AssetManager.assets.music.menu_wav, true)
+    -- AudioManager.PlayMusic(AssetManager.assets.music.menu_wav, true)
 
     local f = AssetManager.assets.fonts.Tiny5_ttf[16]
     f:setFilter("nearest", "nearest")
@@ -31,66 +29,51 @@ MainMenuScene.Enter = function(self)
     })
     self.layers:Add(self.ui_layer)
 
+    -- Create play button using new component system
     local play_button = SceneGraph.Node.New({
         x = 110,
         y = 60,
         width = 100,
         height = 30,
-        ox = 110/2,
-        oy = 60/2
+        ox = 50,
+        oy = 15
     })
-
-    SceneGraph.Plugins.Layout.InstallTo(play_button)
-        .SetMode("anchor")
-        .SetPadding(8)
-
-    SceneGraph.Graphics.On(play_button)
-        :Add(SceneGraph.Graphics.Rect.New({
-            color = { 100/255, 149/255, 237/255, 1},
-            mode = "fill",
-        }), "fill")
-        :Add(SceneGraph.Graphics.Rect.New({
-            color = { 100/255, 149/255, 237/255, 1},
-            mode = "line",
-        }), "border")
-
-    local text_node = SceneGraph.Node.New()
-    SceneGraph.Graphics.On(text_node)
-        :Add(SceneGraph.Graphics.Text.New({
-            text = "Play",
-            font = f,
-            color = {1, 1, 1, 1},
-            shadow = { x = 1, y = 1, color = {0, 0, 0, 0.5} },
-        }), "label")
-
-    SceneGraph.Plugins.Layout.Configure(text_node)
-        .SetAnchor("center")
-
-    -- Set text node size from the text drawable
-    local text_graphic = (text_node.graphics:Get("label") --[[@as TextDrawable]]); if text_graphic == nil then error() end
-    text_node.width = text_graphic:GetWidth()
-    text_node.height = text_graphic:GetHeight()
-
-    play_button:AddChild(text_node)
-
-    SceneGraph.Plugins.Input.InstallTo(play_button)
-        .OnActivate(function(_)
-            InputManager.UnsetActiveMap()
-            SceneManager.SwitchTo(Scenes.Gameplay)
-        end)
-        .OnFocus(function(_)
-            print("focus")
-        end)
-        .OnBlur(function(_)
-        end)
-        .OnPress(function (_)
-        end)
-        .OnRelease(function (_)
-        end)
-        .OnHover(function (_)
-        end)
-        .OnHoverEnd(function (n)
-        end)
+    :AddComponent(SceneGraph.Components.Input.New())
+    :On("Activate", function()
+        InputManager.UnsetActiveMap()
+        SceneManager.SwitchTo(Scenes.Gameplay)
+    end)
+    :AddComponent(SceneGraph.Components.Rect.New({
+        color = { 100/255, 149/255, 237/255, 1},
+        mode = "fill",
+        ox = 50,
+        oy = 15
+    }))
+    :AddComponent(SceneGraph.Components.Rect.New({
+        color = { 100/255, 149/255, 237/255, 1},
+        mode = "line",
+        ox = 50,
+        oy = 15
+    }))
+    :AddComponent(SceneGraph.Components.Text.New({
+        text = "Play",
+        font = f,
+        color = { 1, 1, 1, 1 },
+        shadow = { x = 1, y = 1, color = {0, 0, 0, 0.5} },
+        align = "center",
+        valign = "middle",
+        ox = 50,
+        oy = 15
+    }))
+    :AddComponent(SceneGraph.Components.HoverColor.New({
+        on_enter_color = { 1, 0.3, 1, 1 },
+        target_components = { "Rect" }
+    }))
+    :AddComponent(SceneGraph.Components.HoverScale.New({
+        on_enter_scale = 1.1,
+        step = 0.05,
+        target_components = { "Rect" },
+    }))
 
     self.ui_layer:AddChild(play_button)
 end
@@ -99,17 +82,17 @@ MainMenuScene.HandleInput = function(self, _dt)
     local actions = self.inputmap.actions
 
     if InputManager.JustPressed(actions.UP) then
-        SceneGraph.Plugins.Input.Navigate("up")
+        SceneGraph.InputPlugin.Navigate("up")
     elseif InputManager.JustPressed(actions.DOWN) then
-        SceneGraph.Plugins.Input.Navigate("down")
+        SceneGraph.InputPlugin.Navigate("down")
     elseif InputManager.JustPressed(actions.LEFT) then
-        SceneGraph.Plugins.Input.Navigate("left")
+        SceneGraph.InputPlugin.Navigate("left")
     elseif InputManager.JustPressed(actions.RIGHT) then
-        SceneGraph.Plugins.Input.Navigate("right")
+        SceneGraph.InputPlugin.Navigate("right")
     end
 
     if InputManager.JustPressed(actions.CONFIRM) then
-        SceneGraph.Plugins.Input.Activate()
+        SceneGraph.InputPlugin.Activate()
     end
 end
 
