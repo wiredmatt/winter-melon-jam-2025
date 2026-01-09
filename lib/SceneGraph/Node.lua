@@ -25,6 +25,7 @@
 ---@field children Node[]
 ---@field _components Component[]?
 ---@field _components_by_type { [string]: Component[] }?
+---@field _components_by_name { [string]: Component }?
 ---@field _event_handlers { [string]: EventHandler[] }?
 ---@field _transform_dirty boolean
 ---@field _cached_wx number
@@ -350,6 +351,7 @@ Node.Destroy = function(self)
         end
         self._components = nil
         self._components_by_type = nil
+        self._components_by_name = nil
     end
 
     if self.parent then
@@ -387,6 +389,11 @@ Node.AddComponent = function(self, component)
                 table.insert(self._components_by_type[additional_type], component)
             end
         end
+    end
+
+    if component.name then
+        self._components_by_name = self._components_by_name or {}
+        self._components_by_name[component.name] = component
     end
 
     if component.OnAdded then
@@ -432,6 +439,10 @@ Node.RemoveComponent = function(self, component_or_type)
         end
     end
 
+    if component.name and self._components_by_name then
+        self._components_by_name[component.name] = nil
+    end
+
     component.node = nil
     self:Dispatch("ComponentRemoved", component)
     return true
@@ -450,6 +461,13 @@ end
 Node.GetComponents = function(self, type)
     if not self._components_by_type then return {} end
     return self._components_by_type[type] or {}
+end
+
+---@param name string
+---@return Component?
+Node.GetComponentByName = function(self, name)
+    if not self._components_by_name then return nil end
+    return self._components_by_name[name]
 end
 
 ---@param type string

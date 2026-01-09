@@ -26,4 +26,19 @@ Utils.LerpColor = function(c1, c2, t)
     return result
 end
 
+---@param color love.Color
+---@param amount number?
+---@return love.Color
+Utils.BrightenColor = function(color, amount)
+    amount = amount or 0.02
+    local result = {
+        color[1] + (1 - color[1]) * amount,  -- R
+        color[2] + (1 - color[2]) * amount,  -- G
+        color[3] + (1 - color[3]) * amount,  -- B
+        color[4] or 1                        -- A
+    }
+    return result
+end
+
+
 return Utils

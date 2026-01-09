@@ -37,7 +37,7 @@
 ---@field height number
 
 ---@class ResolutionConfig_CanvasOptions
----@field clear_color [number, number, number, number]
+---@field clear_color love.Color
 ---@field filter_min love.FilterMode?
 ---@field filter_max love.FilterMode?
 ---@field filter_ansitropy number?
@@ -90,7 +90,7 @@ Program.Setup = function (config, game)
 
     Program.window_cfg = config.window_cfg
     Program.virtual_cfg = config.virtual_cfg
-    Program.canvas_cfg = config.canvas_cfg or { filter_min = "linear", filter_max = "linear", filter_ansitropy = 1, clear_color = {0,0,0,0} }
+    Program.canvas_cfg = config.canvas_cfg or { filter_min = "linear", filter_max = "linear", filter_ansitropy = 1, clear_color = {0,0,0,1} }
 
     Program.canvas = love.graphics.newCanvas(Program.virtual_cfg.width, Program.virtual_cfg.height)
     Program.canvas:setFilter(Program.canvas_cfg.filter_min, Program.canvas_cfg.filter_max, Program.canvas_cfg.filter_ansitropy)

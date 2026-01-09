@@ -2,6 +2,7 @@
 ---@field type string
 ---@field enabled boolean
 ---@field node Node?
+---@field name string?
 ---@field types string[]?
 ---@field OnAdded fun(self: Component)?
 ---@field Update fun(self: Component, dt: number)?
@@ -29,6 +30,7 @@ function Component.Define(type_name, impl)
             type = type_name,
             enabled = true,
             node = nil,
+            name = config.name or nil,
         }
 
         for k, v in pairs(impl) do

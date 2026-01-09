@@ -18,7 +18,6 @@ local HoverColorComponent = SceneGraph.Component.Define("HoverColor", {
         self.step = config.step or 0.1
         self.target_components = config.target_components
 
-        -- These will be set in OnAdded when we have access to node
         self.default_color = config.default_color
         self.current_color = nil
         self.target_color = nil
@@ -27,13 +26,20 @@ local HoverColorComponent = SceneGraph.Component.Define("HoverColor", {
 
     ---@param self HoverColorComponent
     OnAdded = function(self)
-        -- If we have specific target graphics, filter to those
         if self.target_components then
             local filtered = {}
-            for _, name in ipairs(self.target_components) do
-                local drawables = self.node:GetComponents(name)
-                for _, drawable in ipairs(drawables) do
-                    table.insert(filtered, drawable)
+            for _, target in ipairs(self.target_components) do
+                if target:sub(1, 1) == "#" then
+                    local name = target:sub(2)
+                    local component = self.node:GetComponentByName(name)
+                    if component then
+                        table.insert(filtered, component)
+                    end
+                else
+                    local drawables = self.node:GetComponents(target)
+                    for _, drawable in ipairs(drawables) do
+                        table.insert(filtered, drawable)
+                    end
                 end
             end
             self._targets = filtered
@@ -41,7 +47,6 @@ local HoverColorComponent = SceneGraph.Component.Define("HoverColor", {
             self._targets = self.node:GetComponents("Drawable")
         end
 
-        -- Get initial color from first drawable or use default
         local initial_color = self.default_color or {1, 1, 1, 1}
         if #self._targets > 0 and self._targets[1].color then
             initial_color = Utils.CopyColor(self._targets[1].color)
@@ -67,10 +72,8 @@ local HoverColorComponent = SceneGraph.Component.Define("HoverColor", {
     ---@param self HoverColorComponent
     ---@param dt number
     Update = function(self, dt)
-        -- Lerp current color towards target
         self.current_color = Utils.LerpColor(self.current_color, self.target_color, self.step)
 
-        -- Apply color to all target drawables
         for _, drawable in ipairs(self._targets) do
             drawable.color = self.current_color
         end

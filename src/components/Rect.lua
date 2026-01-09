@@ -10,13 +10,14 @@
 ---@field oy number
 ---@field color love.Color
 ---@field mode love.DrawMode
+---@field line_width number?
 
 ---@class RectComponentClass
----@field New fun(config: { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: love.Color?, mode: love.DrawMode? }?): RectComponent
+---@field New fun(config: { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: love.Color?, mode: love.DrawMode?, line_width: number? }?): RectComponent
 
 local RectComponent = SceneGraph.Component.Define("Rect", {
     ---@param self RectComponent
-    ---@param config { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: love.Color?, mode: love.DrawMode? }
+    ---@param config { width: number?, height: number?, x: number?, y: number?, r: number?, sx: number?, sy: number?, ox: number?, oy: number?, color: love.Color?, mode: love.DrawMode?, line_width: number? }
     Init = function(self, config)
         self.width = config.width
         self.height = config.height
@@ -31,6 +32,7 @@ local RectComponent = SceneGraph.Component.Define("Rect", {
 
         self.color = config.color or {1, 1, 1, 1}
         self.mode = config.mode or "fill"
+        self.line_width = config.line_width or 1
 
         -- Register as both Rect and Drawable for queries
         self.types = {"Rect", "Drawable"}
@@ -50,7 +52,9 @@ local RectComponent = SceneGraph.Component.Define("Rect", {
         love.graphics.translate(self.x, self.y)
 
         love.graphics.setColor(self.color)
+        love.graphics.setLineWidth(self.line_width)
         love.graphics.rectangle(self.mode, 0, 0, w, h)
+        love.graphics.setLineWidth(1)
         love.graphics.setColor(1, 1, 1, 1)
 
         love.graphics.pop()

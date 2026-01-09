@@ -5,6 +5,8 @@ local ProgramConfig = {
         resizable = true,
         width = 960,
         height = 540,
+        minwidth = 320,
+        minheight = 180
     },
     virtual_cfg = {
         width = 320,
